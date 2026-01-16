@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gong Zhu - Chase the Pig</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Main Menu Screen -->
+        <div id="menu-screen" class="screen active">
+            <div class="menu-container">
+                <h1 class="game-title">🐷 Gong Zhu 🐷</h1>
+                <h2 class="game-subtitle">Chase the Pig</h2>
+                
+                <div class="player-setup">
+                    <h3>Player Setup</h3>
+                    <div class="input-group">
+                        <label for="player-name">Your Name</label>
+                        <input type="text" id="player-name" placeholder="Enter your name" maxlength="20">
+                    </div>
+                    <div class="input-group">
+                        <label>Choose Avatar</label>
+                        <div class="avatar-picker" id="avatar-picker">
+                            <span class="avatar-option selected" data-avatar="😀">😀</span>
+                            <span class="avatar-option" data-avatar="😎">😎</span>
+                            <span class="avatar-option" data-avatar="🤠">🤠</span>
+                            <span class="avatar-option" data-avatar="👨">👨</span>
+                            <span class="avatar-option" data-avatar="👩">👩</span>
+                            <span class="avatar-option" data-avatar="🧑">🧑</span>
+                            <span class="avatar-option" data-avatar="👴">👴</span>
+                            <span class="avatar-option" data-avatar="👵">👵</span>
+                            <span class="avatar-option" data-avatar="🐉">🐉</span>
+                            <span class="avatar-option" data-avatar="🐯">🐯</span>
+                            <span class="avatar-option" data-avatar="🐼">🐼</span>
+                            <span class="avatar-option" data-avatar="🦊">🦊</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="menu-buttons">
+                    <button class="btn btn-primary" id="btn-create-room">Create Room</button>
+                    <button class="btn btn-secondary" id="btn-join-room">Join Room</button>
+                    <button class="btn btn-info" id="btn-how-to-play">How to Play</button>
+                </div>
+
+                <div class="join-room-form" id="join-room-form" style="display: none;">
+                    <div class="input-group">
+                        <label for="room-code">Room Code</label>
+                        <input type="text" id="room-code" placeholder="Enter 6-digit code" maxlength="6">
+                    </div>
+                    <button class="btn btn-primary" id="btn-confirm-join">Join</button>
+                    <button class="btn btn-secondary" id="btn-cancel-join">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lobby Screen -->
+        <div id="lobby-screen" class="screen">
+            <div class="lobby-container">
+                <h2>Game Lobby</h2>
+                <div class="room-info">
+                    <span>Room Code: </span>
+                    <span class="room-code" id="display-room-code">------</span>
+                    <button class="btn-copy" id="btn-copy-code" title="Copy code">📋</button>
+                </div>
+
+                <div class="players-list" id="players-list">
+                    <!-- Players will be added here dynamically -->
+                </div>
+
+                <div class="lobby-actions" id="host-actions">
+                    <button class="btn btn-secondary" id="btn-add-bot">+ Add Bot</button>
+                    <button class="btn btn-primary" id="btn-start-game" disabled>Start Game</button>
+                </div>
+                
+                <div class="waiting-message" id="waiting-message">
+                    Waiting for host to start the game...
+                </div>
+
+                <button class="btn btn-danger" id="btn-leave-room">Leave Room</button>
+            </div>
+        </div>
+
+        <!-- Game Screen -->
+        <div id="game-screen" class="screen">
+            <div class="game-container">
+                <!-- Opponent areas -->
+                <div class="opponent-area opponent-top" id="opponent-top">
+                    <div class="player-info">
+                        <span class="player-avatar">🤖</span>
+                        <span class="player-name">Player 3</span>
+                        <span class="player-score">Score: 0</span>
+                    </div>
+                    <div class="opponent-cards"></div>
+                    <div class="exposed-cards"></div>
+                    <div class="taken-cards"></div>
+                </div>
+
+                <div class="opponent-area opponent-left" id="opponent-left">
+                    <div class="player-info">
+                        <span class="player-avatar">🤖</span>
+                        <span class="player-name">Player 2</span>
+                        <span class="player-score">Score: 0</span>
+                    </div>
+                    <div class="opponent-cards"></div>
+                    <div class="exposed-cards"></div>
+                    <div class="taken-cards"></div>
+                </div>
+
+                <div class="opponent-area opponent-right" id="opponent-right">
+                    <div class="player-info">
+                        <span class="player-avatar">🤖</span>
+                        <span class="player-name">Player 4</span>
+                        <span class="player-score">Score: 0</span>
+                    </div>
+                    <div class="opponent-cards"></div>
+                    <div class="exposed-cards"></div>
+                    <div class="taken-cards"></div>
+                </div>
+
+                <!-- Center play area -->
+                <div class="play-area" id="play-area">
+                    <div class="trick-cards" id="trick-cards">
+                        <!-- Cards played in current trick -->
+                    </div>
+                    <div class="game-message" id="game-message"></div>
+                </div>
+
+                <!-- Player's area -->
+                <div class="player-area" id="player-area">
+                    <div class="player-info">
+                        <span class="player-avatar" id="my-avatar">😀</span>
+                        <span class="player-name" id="my-name">You</span>
+                        <span class="player-score" id="my-score">Score: 0</span>
+                    </div>
+                    <div class="my-exposed-cards" id="my-exposed-cards"></div>
+                    <div class="my-taken-cards" id="my-taken-cards"></div>
+                    <div class="hand-cards" id="hand-cards">
+                        <!-- Player's hand -->
+                    </div>
+                </div>
+
+                <!-- Expose phase UI -->
+                <div class="expose-phase" id="expose-phase" style="display: none;">
+                    <h3>Expose Cards Phase</h3>
+                    <p>Click on exposable cards to double their value</p>
+                    <p class="expose-hint">Exposable: ♥A, ♠Q (Pig), ♦J (Sheep), ♣10</p>
+                    <button class="btn btn-primary" id="btn-done-exposing">Done Exposing</button>
+                </div>
+
+                <!-- Scoreboard -->
+                <div class="scoreboard" id="scoreboard">
+                    <h4>Scores</h4>
+                    <div class="score-list" id="score-list"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Round End Modal -->
+        <div id="round-modal" class="modal">
+            <div class="modal-content">
+                <h2>Round Complete!</h2>
+                <div class="round-scores" id="round-scores"></div>
+                <div class="total-scores" id="total-scores"></div>
+                <button class="btn btn-primary" id="btn-next-round">Next Round</button>
+            </div>
+        </div>
+
+        <!-- Game Over Modal -->
+        <div id="gameover-modal" class="modal">
+            <div class="modal-content">
+                <h2>🐷 Game Over! 🐷</h2>
+                <div class="game-result" id="game-result"></div>
+                <div class="final-scores" id="final-scores"></div>
+                <button class="btn btn-primary" id="btn-new-game">New Game</button>
+                <button class="btn btn-secondary" id="btn-back-menu">Back to Menu</button>
+            </div>
+        </div>
+
+        <!-- How to Play Modal -->
+        <div id="rules-modal" class="modal">
+            <div class="modal-content rules-content">
+                <h2>How to Play Gong Zhu</h2>
+                <button class="modal-close" id="btn-close-rules">&times;</button>
+                
+                <div class="rules-section">
+                    <h3>🎯 Objective</h3>
+                    <p>Avoid taking penalty cards (hearts and the Queen of Spades) while trying to collect bonus cards (Jack of Diamonds and 10 of Clubs).</p>
+                </div>
+
+                <div class="rules-section">
+                    <h3>📋 Card Values</h3>
+                    <ul>
+                        <li>♠Q (Pig): <strong>-100</strong></li>
+                        <li>♥A: -50, ♥K: -40, ♥Q: -30, ♥J: -20</li>
+                        <li>♥10,9,8,7,6,5: -10 each</li>
+                        <li>♥4,3,2: 0 (but still count as scoring cards)</li>
+                        <li>♦J (Sheep): <strong>+100</strong></li>
+                        <li>♣10: +50 alone, or doubles all scoring cards</li>
+                    </ul>
+                </div>
+
+                <div class="rules-section">
+                    <h3>🎴 Exposing Cards</h3>
+                    <p>Before play begins, you may expose certain cards to double their value:</p>
+                    <ul>
+                        <li>♥A exposed: All hearts are worth double</li>
+                        <li>♠Q exposed: Pig is worth -200</li>
+                        <li>♦J exposed: Sheep is worth +200</li>
+                        <li>♣10 exposed: Quadruples instead of doubles</li>
+                    </ul>
+                </div>
+
+                <div class="rules-section">
+                    <h3>🃏 Gameplay</h3>
+                    <ul>
+                        <li>Play is anticlockwise</li>
+                        <li>First hand: 2♠ holder leads</li>
+                        <li>Must follow suit if possible</li>
+                        <li>Highest card of led suit wins</li>
+                    </ul>
+                </div>
+
+                <div class="rules-section">
+                    <h3>🏆 Special Rules</h3>
+                    <ul>
+                        <li>Taking ALL hearts: +200 instead of -200</li>
+                        <li>All hearts + Pig: Pig becomes +100</li>
+                        <li>Game ends when someone reaches -1000</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="js/game.js"></script>
+</body>
+</html>
