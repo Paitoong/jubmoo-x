@@ -17,61 +17,6 @@ class Bot {
         this.difficulty = 'medium'; // easy, medium, hard
     }
 
-    // Decide whether to expose a card
-    decideExpose(hand, exposedCards) {
-        const decisions = [];
-        
-        // Check each exposable card
-        const exposables = [
-            { suit: 'hearts', rank: 'A' },
-            { suit: 'spades', rank: 'Q' },
-            { suit: 'diamonds', rank: 'J' },
-            { suit: 'clubs', rank: '10' }
-        ];
-
-        for (const exp of exposables) {
-            const hasCard = hand.some(c => c.suit === exp.suit && c.rank === exp.rank);
-            if (!hasCard) continue;
-
-            // Strategy based on difficulty
-            if (this.difficulty === 'easy') {
-                // Easy bots expose randomly
-                if (Math.random() > 0.7) {
-                    decisions.push(exp);
-                }
-            } else if (this.difficulty === 'medium') {
-                // Medium bots use basic strategy
-                if (exp.suit === 'diamonds' && exp.rank === 'J') {
-                    // Usually expose sheep for bonus
-                    if (Math.random() > 0.3) decisions.push(exp);
-                } else if (exp.suit === 'clubs' && exp.rank === '10') {
-                    // Expose club ten if we have many clubs
-                    const clubCount = hand.filter(c => c.suit === 'clubs').length;
-                    if (clubCount >= 4 && Math.random() > 0.4) decisions.push(exp);
-                } else if (exp.suit === 'spades' && exp.rank === 'Q') {
-                    // Rarely expose pig unless have few spades
-                    const spadeCount = hand.filter(c => c.suit === 'spades').length;
-                    if (spadeCount <= 2 && Math.random() > 0.6) decisions.push(exp);
-                } else if (exp.suit === 'hearts' && exp.rank === 'A') {
-                    // Expose heart ace if going for all hearts
-                    const heartCount = hand.filter(c => c.suit === 'hearts').length;
-                    if (heartCount >= 8 && Math.random() > 0.5) decisions.push(exp);
-                }
-            } else {
-                // Hard bots use advanced strategy
-                // Implement more sophisticated logic here
-                if (exp.suit === 'diamonds' && exp.rank === 'J') {
-                    const diamondCount = hand.filter(c => c.suit === 'diamonds').length;
-                    const lowDiamonds = hand.filter(c => c.suit === 'diamonds' && 
-                        ['2', '3', '4', '5', '6'].includes(c.rank)).length;
-                    if (diamondCount >= 3 && lowDiamonds >= 1) decisions.push(exp);
-                }
-            }
-        }
-
-        return decisions;
-    }
-
     // Choose a card to play
     chooseCard(validCards, gameState) {
         if (validCards.length === 0) return null;

@@ -598,21 +598,7 @@ body {
     font-size: 28px;
 }
 
-.card.exposable {
-    animation: pulse 1.5s infinite;
-}
-
-@keyframes pulse {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(241, 196, 15, 0.7); }
-    50% { box-shadow: 0 0 0 10px rgba(241, 196, 15, 0); }
-}
-
-.card.exposed {
-    border: 3px solid var(--warning-color);
-    background: linear-gradient(135deg, #fff 0%, #fff3cd 100%);
-}
-
-/* Mini cards for exposed/taken display */
+/* Mini cards for taken display */
 .mini-card {
     width: 35px;
     height: 50px;
@@ -636,35 +622,11 @@ body {
     color: #2c3e50;
 }
 
-.exposed-cards, .taken-cards, .my-exposed-cards, .my-taken-cards {
+.taken-cards, .my-taken-cards {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
     margin-top: 5px;
-}
-
-/* Expose Phase UI */
-.expose-phase {
-    position: absolute;
-    top: 20%;
-    left: 50%;
-    transform: translateX(-50%);
-    background: rgba(0, 0, 0, 0.8);
-    padding: 20px 30px;
-    border-radius: 15px;
-    text-align: center;
-    z-index: 100;
-}
-
-.expose-phase h3 {
-    margin-bottom: 10px;
-    color: var(--warning-color);
-}
-
-.expose-hint {
-    font-size: 14px;
-    color: #bdc3c7;
-    margin: 10px 0;
 }
 
 /* Scoreboard */

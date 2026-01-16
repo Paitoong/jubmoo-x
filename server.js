@@ -93,27 +93,6 @@ async function handleBotTurn(roomId) {
     }
 }
 
-// Handle bot exposing phase
-async function handleBotExpose(roomId) {
-    const room = rooms.get(roomId);
-    if (!room || room.game.gamePhase !== 'exposing') return;
-
-    for (const player of room.game.players) {
-        if (player.isBot && player.decideExpose) {
-            const hand = room.game.hands[player.id];
-            const decisions = player.decideExpose(hand, room.game.exposedCards);
-            
-            for (const card of decisions) {
-                room.game.exposeCard(player.id, card);
-                io.to(roomId).emit('cardExposed', {
-                    playerId: player.id,
-                    card
-                });
-            }
-        }
-    }
-}
-
 io.on('connection', (socket) => {
     console.log(`Player connected: ${socket.id}`);
 
@@ -248,49 +227,6 @@ io.on('connection', (socket) => {
             io.to(playerRoom.roomId).emit('gameStarted');
             broadcastGameState(playerRoom.roomId);
 
-            // Handle bot expose phase
-            handleBotExpose(playerRoom.roomId);
-        }
-    });
-
-    // Expose a card
-    socket.on('exposeCard', (card) => {
-        const playerRoom = playerRooms.get(socket.id);
-        if (!playerRoom) return;
-
-        const room = rooms.get(playerRoom.roomId);
-        if (!room) return;
-
-        if (room.game.exposeCard(playerRoom.playerId, card)) {
-            io.to(playerRoom.roomId).emit('cardExposed', {
-                playerId: playerRoom.playerId,
-                card
-            });
-            broadcastGameState(playerRoom.roomId);
-        }
-    });
-
-    // Done exposing
-    socket.on('doneExposing', () => {
-        const playerRoom = playerRooms.get(socket.id);
-        if (!playerRoom) return;
-
-        const room = rooms.get(playerRoom.roomId);
-        if (!room) return;
-
-        // Mark player as done exposing
-        const player = room.game.players.find(p => p.id === playerRoom.playerId);
-        if (player) {
-            player.doneExposing = true;
-        }
-
-        // Check if all human players are done
-        const allDone = room.game.players.every(p => p.isBot || p.doneExposing);
-        if (allDone) {
-            room.game.startPlaying();
-            io.to(playerRoom.roomId).emit('playingStarted');
-            broadcastGameState(playerRoom.roomId);
-            
             // Start bot turns if first player is bot
             handleBotTurn(playerRoom.roomId);
         }
@@ -357,13 +293,10 @@ io.on('connection', (socket) => {
             return;
         }
 
-        // Reset done exposing flags
-        room.game.players.forEach(p => p.doneExposing = false);
-        
         room.game.startNewRound();
         io.to(playerRoom.roomId).emit('newRoundStarted');
         broadcastGameState(playerRoom.roomId);
-        handleBotExpose(playerRoom.roomId);
+        handleBotTurn(playerRoom.roomId);
     });
 
     // Get room list (for joining)

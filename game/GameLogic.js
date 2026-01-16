@@ -63,11 +63,9 @@ class GongZhuGame {
         this.leadSuit = null;
         this.scores = {};
         this.tricksTaken = {};
-        this.exposedCards = {};
-        this.gamePhase = 'waiting'; // waiting, exposing, playing, finished
+        this.gamePhase = 'waiting'; // waiting, playing, finished
         this.previousPigHolder = null;
         this.roundNumber = 1;
-        this.suitLedBefore = { hearts: false, diamonds: false, clubs: false, spades: false };
     }
 
     addPlayer(player) {
@@ -97,13 +95,12 @@ class GongZhuGame {
         this.players.forEach((player, index) => {
             this.hands[player.id] = dealtHands[index];
             this.tricksTaken[player.id] = [];
-            this.exposedCards[player.id] = [];
         });
 
-        this.suitLedBefore = { hearts: false, diamonds: false, clubs: false, spades: false };
-        this.gamePhase = 'exposing';
+        this.gamePhase = 'playing';
         this.currentTrick = [];
         this.leadSuit = null;
+        this.currentPlayerIndex = this.findStartingPlayer();
 
         return true;
     }
@@ -125,73 +122,20 @@ class GongZhuGame {
         return 0;
     }
 
-    startPlaying() {
-        this.gamePhase = 'playing';
-        this.currentPlayerIndex = this.findStartingPlayer();
-        return this.currentPlayerIndex;
-    }
-
-    canExposeCard(playerId, card) {
-        const exposableCards = [
-            { suit: 'hearts', rank: 'A' },
-            { suit: 'spades', rank: 'Q' },
-            { suit: 'diamonds', rank: 'J' },
-            { suit: 'clubs', rank: '10' }
-        ];
-
-        const hand = this.hands[playerId];
-        const hasCard = hand.some(c => c.suit === card.suit && c.rank === card.rank);
-        const isExposable = exposableCards.some(e => e.suit === card.suit && e.rank === card.rank);
-        const notAlreadyExposed = !this.exposedCards[playerId].some(c => c.suit === card.suit && c.rank === card.rank);
-
-        return hasCard && isExposable && notAlreadyExposed;
-    }
-
-    exposeCard(playerId, card) {
-        if (this.gamePhase !== 'exposing') return false;
-        if (!this.canExposeCard(playerId, card)) return false;
-
-        this.exposedCards[playerId].push(card);
-        return true;
-    }
-
     getValidCards(playerId) {
         const hand = this.hands[playerId];
         if (!hand || hand.length === 0) return [];
 
-        // If leading
+        // If leading, can play any card
         if (this.currentTrick.length === 0) {
-            // Check for exposed cards restrictions
-            const validCards = hand.filter(card => {
-                const isExposed = this.exposedCards[playerId].some(
-                    e => e.suit === card.suit && e.rank === card.rank
-                );
-                if (isExposed && !this.suitLedBefore[card.suit]) {
-                    // Can only lead exposed card if it's the only card of that suit
-                    const suitCards = hand.filter(c => c.suit === card.suit);
-                    return suitCards.length === 1;
-                }
-                return true;
-            });
-            return validCards.length > 0 ? validCards : hand;
+            return hand;
         }
 
         // Must follow suit if possible
         const suitCards = hand.filter(c => c.suit === this.leadSuit);
         
         if (suitCards.length > 0) {
-            // Check exposed card restrictions
-            const validCards = suitCards.filter(card => {
-                const isExposed = this.exposedCards[playerId].some(
-                    e => e.suit === card.suit && e.rank === card.rank
-                );
-                if (isExposed && !this.suitLedBefore[card.suit]) {
-                    // Cannot play exposed card on first trick of suit unless no choice
-                    return suitCards.length === 1;
-                }
-                return true;
-            });
-            return validCards.length > 0 ? validCards : suitCards;
+            return suitCards;
         }
 
         // Cannot follow suit - can play anything
@@ -225,7 +169,6 @@ class GongZhuGame {
         // Track lead suit
         if (this.currentTrick.length === 1) {
             this.leadSuit = card.suit;
-            this.suitLedBefore[card.suit] = true;
         }
 
         // Check if trick is complete
@@ -325,13 +268,6 @@ class GongZhuGame {
             const hasSheep = taken.some(c => c.suit === 'diamonds' && c.rank === 'J');
             const hasClubTen = taken.some(c => c.suit === 'clubs' && c.rank === '10');
             
-            // Check exposed cards multipliers
-            const allExposed = Object.values(this.exposedCards).flat();
-            const heartAceExposed = allExposed.some(c => c.suit === 'hearts' && c.rank === 'A');
-            const pigExposed = allExposed.some(c => c.suit === 'spades' && c.rank === 'Q');
-            const sheepExposed = allExposed.some(c => c.suit === 'diamonds' && c.rank === 'J');
-            const clubTenExposed = allExposed.some(c => c.suit === 'clubs' && c.rank === '10');
-            
             // Calculate hearts score
             let heartsScore = 0;
             for (const card of heartsTaken) {
@@ -343,28 +279,19 @@ class GongZhuGame {
                 heartsScore = 200; // Positive if all hearts taken
                 if (hasPig) {
                     score += 100; // Pig becomes positive
-                } else if (hasPig === false && taken.some(c => c.suit === 'spades' && c.rank === 'Q') === false) {
-                    // Don't add pig penalty
                 }
             } else {
                 // Normal pig penalty
                 if (hasPig) {
                     score -= 100;
-                    if (pigExposed) score -= 100; // Double
                 }
-            }
-            
-            if (heartAceExposed) {
-                heartsScore *= 2;
             }
             
             score += heartsScore;
             
             // Sheep bonus
             if (hasSheep) {
-                let sheepValue = 100;
-                if (sheepExposed) sheepValue = 200;
-                score += sheepValue;
+                score += 100;
             }
             
             // Club ten effect
@@ -374,12 +301,11 @@ class GongZhuGame {
                 );
                 
                 if (otherScoringCards.length === 0) {
-                    // No other scoring cards - club ten is worth +50 (or +100 if exposed)
-                    score += clubTenExposed ? 100 : 50;
+                    // No other scoring cards - club ten is worth +50
+                    score += 50;
                 } else {
-                    // Double (or quadruple if exposed) the score
-                    const multiplier = clubTenExposed ? 4 : 2;
-                    score = score * multiplier;
+                    // Double the score
+                    score = score * 2;
                 }
             }
             
@@ -441,7 +367,6 @@ class GongZhuGame {
                 isBot: p.isBot,
                 score: this.scores[p.id],
                 cardCount: this.hands[p.id]?.length || 0,
-                exposedCards: this.exposedCards[p.id] || [],
                 tricksTaken: this.tricksTaken[p.id] || []
             })),
             gamePhase: this.gamePhase,

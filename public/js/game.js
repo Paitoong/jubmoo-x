@@ -38,7 +38,6 @@ class GongZhuClient {
         this.handCards = document.getElementById('hand-cards');
         this.trickCards = document.getElementById('trick-cards');
         this.gameMessage = document.getElementById('game-message');
-        this.exposePhase = document.getElementById('expose-phase');
         this.scoreList = document.getElementById('score-list');
 
         // Modals
@@ -67,9 +66,6 @@ class GongZhuClient {
         document.getElementById('btn-start-game').addEventListener('click', () => this.startGame());
         document.getElementById('btn-leave-room').addEventListener('click', () => this.leaveRoom());
 
-        // Game buttons
-        document.getElementById('btn-done-exposing').addEventListener('click', () => this.doneExposing());
-
         // Modal buttons
         document.getElementById('btn-next-round').addEventListener('click', () => this.nextRound());
         document.getElementById('btn-new-game').addEventListener('click', () => this.newGame());
@@ -85,8 +81,6 @@ class GongZhuClient {
         this.socket.on('botRemoved', (data) => this.onBotRemoved(data));
         this.socket.on('gameState', (state) => this.onGameState(state));
         this.socket.on('gameStarted', () => this.onGameStarted());
-        this.socket.on('cardExposed', (data) => this.onCardExposed(data));
-        this.socket.on('playingStarted', () => this.onPlayingStarted());
         this.socket.on('cardPlayed', (data) => this.onCardPlayed(data));
         this.socket.on('trickComplete', (data) => this.onTrickComplete(data));
         this.socket.on('roundOver', (data) => this.onRoundOver(data));
@@ -236,14 +230,6 @@ class GongZhuClient {
         this.showScreen(this.gameScreen);
     }
 
-    onCardExposed(data) {
-        // Will be handled by gameState update
-    }
-
-    onPlayingStarted() {
-        this.exposePhase.style.display = 'none';
-    }
-
     onCardPlayed(data) {
         // Animation will be handled by gameState update
     }
@@ -268,7 +254,6 @@ class GongZhuClient {
 
     onNewRoundStarted() {
         this.roundModal.classList.remove('active');
-        this.exposePhase.style.display = 'block';
     }
 
     onPlayerReplacedByBot(data) {
@@ -326,13 +311,6 @@ class GongZhuClient {
         this.renderTrickCards();
         this.renderScoreboard();
         this.updateCurrentTurn();
-
-        // Show expose phase UI
-        if (this.gameState.gamePhase === 'exposing') {
-            this.exposePhase.style.display = 'block';
-        } else {
-            this.exposePhase.style.display = 'none';
-        }
     }
 
     renderHand() {
@@ -352,15 +330,11 @@ class GongZhuClient {
         let html = '';
         for (const card of sortedHand) {
             const isValid = validIds.includes(card.id);
-            const isExposable = this.isExposableCard(card) && this.gameState.gamePhase === 'exposing';
-            const isExposed = this.isCardExposed(card, this.playerId);
 
             const classes = [
                 'card',
                 card.suit,
-                isValid ? 'valid' : (this.gameState.gamePhase === 'playing' ? 'invalid' : ''),
-                isExposable ? 'exposable' : '',
-                isExposed ? 'exposed' : ''
+                isValid ? 'valid' : (this.gameState.gamePhase === 'playing' ? 'invalid' : '')
             ].filter(Boolean).join(' ');
 
             html += `
@@ -383,8 +357,7 @@ class GongZhuClient {
         if (myPlayer) {
             document.getElementById('my-score').textContent = `Score: ${myPlayer.score}`;
             
-            // Render my exposed cards
-            this.renderMiniCards('my-exposed-cards', myPlayer.exposedCards || []);
+            // Render my taken cards
             this.renderMiniCards('my-taken-cards', myPlayer.tricksTaken || []);
         }
     }
@@ -413,8 +386,7 @@ class GongZhuClient {
                 }
                 element.querySelector('.opponent-cards').innerHTML = cardsHtml;
 
-                // Render exposed and taken cards
-                this.renderMiniCards(element.querySelector('.exposed-cards'), opponent.exposedCards || []);
+                // Render taken cards
                 this.renderMiniCards(element.querySelector('.taken-cards'), opponent.tricksTaken || []);
             }
         }
@@ -506,12 +478,7 @@ class GongZhuClient {
 
     // Card Click Handler
     onCardClick(cardId) {
-        if (this.gameState.gamePhase === 'exposing') {
-            const card = this.gameState.hand.find(c => c.id === cardId);
-            if (card && this.isExposableCard(card) && !this.isCardExposed(card, this.playerId)) {
-                this.socket.emit('exposeCard', card);
-            }
-        } else if (this.gameState.gamePhase === 'playing') {
+        if (this.gameState.gamePhase === 'playing') {
             if (this.gameState.currentPlayerId === this.playerId) {
                 const validIds = (this.gameState.validCards || []).map(c => c.id);
                 if (validIds.includes(cardId)) {
@@ -519,10 +486,6 @@ class GongZhuClient {
                 }
             }
         }
-    }
-
-    doneExposing() {
-        this.socket.emit('doneExposing');
     }
 
     // Helper Methods
@@ -534,19 +497,6 @@ class GongZhuClient {
             spades: '♠'
         };
         return symbols[suit] || suit;
-    }
-
-    isExposableCard(card) {
-        return (card.suit === 'hearts' && card.rank === 'A') ||
-               (card.suit === 'spades' && card.rank === 'Q') ||
-               (card.suit === 'diamonds' && card.rank === 'J') ||
-               (card.suit === 'clubs' && card.rank === '10');
-    }
-
-    isCardExposed(card, playerId) {
-        const player = this.gameState.players.find(p => p.id === playerId);
-        if (!player || !player.exposedCards) return false;
-        return player.exposedCards.some(c => c.suit === card.suit && c.rank === card.rank);
     }
 
     getPlayerPosition(playerId) {

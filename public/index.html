@@ -122,7 +122,6 @@
                         <span class="player-score">Score: 0</span>
                     </div>
                     <div class="opponent-cards"></div>
-                    <div class="exposed-cards"></div>
                     <div class="taken-cards"></div>
                 </div>
 
@@ -133,7 +132,6 @@
                         <span class="player-score">Score: 0</span>
                     </div>
                     <div class="opponent-cards"></div>
-                    <div class="exposed-cards"></div>
                     <div class="taken-cards"></div>
                 </div>
 
@@ -144,7 +142,6 @@
                         <span class="player-score">Score: 0</span>
                     </div>
                     <div class="opponent-cards"></div>
-                    <div class="exposed-cards"></div>
                     <div class="taken-cards"></div>
                 </div>
 
@@ -163,19 +160,10 @@
                         <span class="player-name" id="my-name">You</span>
                         <span class="player-score" id="my-score">Score: 0</span>
                     </div>
-                    <div class="my-exposed-cards" id="my-exposed-cards"></div>
                     <div class="my-taken-cards" id="my-taken-cards"></div>
                     <div class="hand-cards" id="hand-cards">
                         <!-- Player's hand -->
                     </div>
-                </div>
-
-                <!-- Expose phase UI -->
-                <div class="expose-phase" id="expose-phase" style="display: none;">
-                    <h3>Expose Cards Phase</h3>
-                    <p>Click on exposable cards to double their value</p>
-                    <p class="expose-hint">Exposable: ♥A, ♠Q (Pig), ♦J (Sheep), ♣10</p>
-                    <button class="btn btn-primary" id="btn-done-exposing">Done Exposing</button>
                 </div>
 
                 <!-- Scoreboard -->
@@ -231,18 +219,7 @@
                 </div>
 
                 <div class="rules-section">
-                    <h3>🎴 Exposing Cards</h3>
-                    <p>Before play begins, you may expose certain cards to double their value:</p>
-                    <ul>
-                        <li>♥A exposed: All hearts are worth double</li>
-                        <li>♠Q exposed: Pig is worth -200</li>
-                        <li>♦J exposed: Sheep is worth +200</li>
-                        <li>♣10 exposed: Quadruples instead of doubles</li>
-                    </ul>
-                </div>
-
-                <div class="rules-section">
-                    <h3>🃏 Gameplay</h3>
+                    <h3> Gameplay</h3>
                     <ul>
                         <li>Play is anticlockwise</li>
                         <li>First hand: 2♠ holder leads</li>
