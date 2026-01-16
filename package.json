@@ -1,7 +1,7 @@
 {
-  "name": "gong-zhu-game",
+  "name": "jubmoo-game",
   "version": "1.0.0",
-  "description": "Gong Zhu (Chase the Pig) - Chinese Hearts Card Game",
+  "description": "JubMoo (Chase the Pig) - Card Game",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -12,7 +12,7 @@
     "socket.io": "^4.6.1",
     "uuid": "^9.0.0"
   },
-  "keywords": ["card-game", "gong-zhu", "hearts", "multiplayer"],
+  "keywords": ["card-game", "jubmoo", "hearts", "multiplayer"],
   "author": "",
   "license": "MIT"
 }

@@ -427,5 +427,5 @@ io.on('connection', (socket) => {
 });
 
 server.listen(PORT, () => {
-    console.log(`Gong Zhu Game Server running on http://localhost:${PORT}`);
+    console.log(`JubMoo Game Server running on http://localhost:${PORT}`);
 });

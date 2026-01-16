@@ -110,15 +110,46 @@ body {
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
 }
 
+/* Game Logo */
+.game-logo {
+    margin-bottom: 15px;
+}
+
+.pig-logo {
+    width: 120px;
+    height: 120px;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+    animation: pigBounce 2s ease-in-out infinite;
+}
+
+@keyframes pigBounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
+.pig-logo:hover {
+    animation: pigWiggle 0.5s ease-in-out;
+}
+
+@keyframes pigWiggle {
+    0%, 100% { transform: rotate(0deg); }
+    25% { transform: rotate(-10deg); }
+    75% { transform: rotate(10deg); }
+}
+
 .game-title {
-    font-size: 48px;
-    margin-bottom: 10px;
+    font-size: 52px;
+    margin-bottom: 5px;
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+    background: linear-gradient(135deg, #FF69B4, #FFB6C1, #FF1493);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
 .game-subtitle {
     font-size: 24px;
-    color: #bdc3c7;
+    color: #FFB6C1;
     margin-bottom: 30px;
 }
 
