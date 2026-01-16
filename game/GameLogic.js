@@ -261,63 +261,82 @@ class GongZhuGame {
         return false;
     }
 
+    // Calculate current round scores from tricksTaken (for live updates)
+    getCurrentRoundScores() {
+        const roundScores = {};
+        
+        for (const player of this.players) {
+            roundScores[player.id] = this.calculatePlayerScore(this.tricksTaken[player.id]);
+        }
+        
+        return roundScores;
+    }
+
+    // Calculate score for a player based on cards taken
+    calculatePlayerScore(taken) {
+        // Check if player took all hearts (all 13 hearts required)
+        const heartsTaken = taken.filter(c => c.suit === 'hearts');
+        const hasAllHearts = heartsTaken.length === 13;
+        
+        // Check for special cards
+        const hasPig = taken.some(c => c.suit === 'spades' && c.rank === 'Q');
+        const hasSheep = taken.some(c => c.suit === 'diamonds' && c.rank === 'J');
+        const hasClubTen = taken.some(c => c.suit === 'clubs' && c.rank === '10');
+        
+        // Calculate base score (before 10 of clubs effect)
+        let baseScore = 0;
+        
+        // Calculate hearts score
+        if (hasAllHearts) {
+            // All hearts taken: +200 instead of -200
+            baseScore += 200;
+            // If also has pig, pig becomes +100 instead of -100
+            if (hasPig) {
+                baseScore += 100;
+            }
+        } else {
+            // Normal hearts scoring
+            for (const card of heartsTaken) {
+                baseScore += this.getHeartValue(card);
+            }
+            // Normal pig penalty
+            if (hasPig) {
+                baseScore -= 100;
+            }
+        }
+        
+        // Sheep bonus (always +100, even with all hearts)
+        if (hasSheep) {
+            baseScore += 100;
+        }
+        
+        // Club ten effect
+        // The 10 of clubs has special rules:
+        // - If NO other scoring cards taken: +50
+        // - If other scoring cards taken: doubles all other scoring cards, but 10 of clubs itself is worth 0
+        // Note: Hearts 4, 3, 2 ARE scoring cards even though they score 0
+        if (hasClubTen) {
+            const otherScoringCards = taken.filter(c => 
+                this.isScoringCard(c) && !(c.suit === 'clubs' && c.rank === '10')
+            );
+            
+            if (otherScoringCards.length === 0) {
+                // No other scoring cards - club ten is worth +50
+                return baseScore + 50;
+            } else {
+                // Double the base score (10 of clubs itself contributes 0)
+                return baseScore * 2;
+            }
+        }
+        
+        return baseScore;
+    }
+
     calculateRoundScores() {
         const roundScores = {};
         
         for (const player of this.players) {
-            const taken = this.tricksTaken[player.id];
-            let score = 0;
-            
-            // Check if player took all hearts
-            const heartsTaken = taken.filter(c => c.suit === 'hearts');
-            const hasAllHearts = heartsTaken.length === 13;
-            
-            // Check for pig and sheep
-            const hasPig = taken.some(c => c.suit === 'spades' && c.rank === 'Q');
-            const hasSheep = taken.some(c => c.suit === 'diamonds' && c.rank === 'J');
-            const hasClubTen = taken.some(c => c.suit === 'clubs' && c.rank === '10');
-            
-            // Calculate hearts score
-            let heartsScore = 0;
-            for (const card of heartsTaken) {
-                const value = this.getHeartValue(card);
-                heartsScore += value;
-            }
-            
-            if (hasAllHearts) {
-                heartsScore = 200; // Positive if all hearts taken
-                if (hasPig) {
-                    score += 100; // Pig becomes positive
-                }
-            } else {
-                // Normal pig penalty
-                if (hasPig) {
-                    score -= 100;
-                }
-            }
-            
-            score += heartsScore;
-            
-            // Sheep bonus
-            if (hasSheep) {
-                score += 100;
-            }
-            
-            // Club ten effect
-            if (hasClubTen) {
-                const otherScoringCards = taken.filter(c => 
-                    !(c.suit === 'clubs' && c.rank === '10')
-                );
-                
-                if (otherScoringCards.length === 0) {
-                    // No other scoring cards - club ten is worth +50
-                    score += 50;
-                } else {
-                    // Double the score
-                    score = score * 2;
-                }
-            }
-            
+            const score = this.calculatePlayerScore(this.tricksTaken[player.id]);
             roundScores[player.id] = score;
             this.scores[player.id] += score;
         }
@@ -367,6 +386,9 @@ class GongZhuGame {
     }
 
     getGameState(forPlayerId = null) {
+        // Get current round scores for live updates
+        const currentRoundScores = this.gamePhase === 'playing' ? this.getCurrentRoundScores() : {};
+        
         const state = {
             roomId: this.roomId,
             players: this.players.map(p => ({
@@ -375,6 +397,7 @@ class GongZhuGame {
                 avatar: p.avatar,
                 isBot: p.isBot,
                 score: this.scores[p.id],
+                roundScore: currentRoundScores[p.id] || 0,
                 cardCount: this.hands[p.id]?.length || 0,
                 tricksTaken: this.tricksTaken[p.id] || []
             })),

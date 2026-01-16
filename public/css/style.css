@@ -365,6 +365,15 @@ body {
 .opponent-area .player-score {
     font-size: 12px;
     color: var(--warning-color);
+    font-weight: 600;
+}
+
+.opponent-area .player-score.positive {
+    color: var(--success-color);
+}
+
+.opponent-area .player-score.negative {
+    color: var(--primary-color);
 }
 
 .opponent-area.current-turn .player-info {
@@ -433,8 +442,8 @@ body {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 300px;
-    height: 250px;
+    width: 400px;
+    height: 320px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -443,8 +452,8 @@ body {
 
 .trick-cards {
     position: relative;
-    width: 200px;
-    height: 150px;
+    width: 320px;
+    height: 240px;
 }
 
 .trick-card {
@@ -524,6 +533,15 @@ body {
 
 .player-area .player-score {
     color: var(--warning-color);
+    font-weight: 600;
+}
+
+.player-area .player-score.positive {
+    color: var(--success-color);
+}
+
+.player-area .player-score.negative {
+    color: var(--primary-color);
 }
 
 /* Hand Cards */

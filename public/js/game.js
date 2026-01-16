@@ -355,7 +355,14 @@ class GongZhuClient {
         
         const myPlayer = this.gameState.players.find(p => p.id === this.playerId);
         if (myPlayer) {
-            document.getElementById('my-score').textContent = `Score: ${myPlayer.score}`;
+            const myScoreEl = document.getElementById('my-score');
+            // Show total score and round score separately
+            const roundScoreText = myPlayer.roundScore !== 0 ? ` (Round: ${myPlayer.roundScore >= 0 ? '+' : ''}${myPlayer.roundScore})` : '';
+            myScoreEl.textContent = `Score: ${myPlayer.score}${roundScoreText}`;
+            
+            // Color based on round score if active, otherwise total score
+            const scoreForColor = myPlayer.roundScore !== 0 ? myPlayer.roundScore : myPlayer.score;
+            myScoreEl.className = 'player-score ' + (scoreForColor >= 0 ? 'positive' : 'negative');
             
             // Render my taken cards
             this.renderMiniCards('my-taken-cards', myPlayer.tricksTaken || []);
@@ -376,7 +383,15 @@ class GongZhuClient {
                 // Update info
                 element.querySelector('.player-avatar').textContent = opponent.avatar || '🤖';
                 element.querySelector('.player-name').textContent = opponent.name + (opponent.isBot ? ' 🤖' : '');
-                element.querySelector('.player-score').textContent = `Score: ${opponent.score}`;
+                
+                // Update score with round score
+                const scoreEl = element.querySelector('.player-score');
+                const roundScoreText = opponent.roundScore !== 0 ? ` (Round: ${opponent.roundScore >= 0 ? '+' : ''}${opponent.roundScore})` : '';
+                scoreEl.textContent = `Score: ${opponent.score}${roundScoreText}`;
+                
+                // Color based on round score if active, otherwise total score
+                const scoreForColor = opponent.roundScore !== 0 ? opponent.roundScore : opponent.score;
+                scoreEl.className = 'player-score ' + (scoreForColor >= 0 ? 'positive' : 'negative');
 
                 // Render card backs
                 const cardCount = opponent.cardCount || 0;
@@ -444,11 +459,13 @@ class GongZhuClient {
         let html = '';
         for (const player of this.gameState.players) {
             const scoreClass = player.score >= 0 ? 'positive' : 'negative';
+            const roundScoreClass = player.roundScore >= 0 ? 'positive' : 'negative';
             const isMe = player.id === this.playerId;
+            const roundScoreText = player.roundScore !== 0 ? ` <span class="${roundScoreClass}">(${player.roundScore >= 0 ? '+' : ''}${player.roundScore})</span>` : '';
             html += `
                 <div class="score-item">
                     <span>${player.avatar} ${player.name}${isMe ? ' (You)' : ''}</span>
-                    <span class="score-value ${scoreClass}">${player.score}</span>
+                    <span class="score-value ${scoreClass}">${player.score}${roundScoreText}</span>
                 </div>
             `;
         }
