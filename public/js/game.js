@@ -411,7 +411,12 @@ class GongZhuClient {
     }
 
     renderTrickCards() {
-        const trick = this.gameState.currentTrick || [];
+        // Show current trick, or last completed trick if current is empty
+        let trick = this.gameState.currentTrick || [];
+        if (trick.length === 0 && this.gameState.lastCompletedTrick && this.gameState.lastCompletedTrick.length > 0) {
+            trick = this.gameState.lastCompletedTrick;
+        }
+        
         const myIndex = this.gameState.players.findIndex(p => p.id === this.playerId);
         const positions = ['from-bottom', 'from-right', 'from-top', 'from-left'];
 

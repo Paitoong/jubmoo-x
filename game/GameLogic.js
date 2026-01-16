@@ -59,6 +59,7 @@ class GongZhuGame {
         this.deck = new Deck();
         this.hands = {};
         this.currentTrick = [];
+        this.lastCompletedTrick = []; // Store last completed trick for display
         this.currentPlayerIndex = 0;
         this.leadSuit = null;
         this.scores = {};
@@ -99,6 +100,7 @@ class GongZhuGame {
 
         this.gamePhase = 'playing';
         this.currentTrick = [];
+        this.lastCompletedTrick = [];
         this.leadSuit = null;
         this.currentPlayerIndex = this.findStartingPlayer();
 
@@ -164,6 +166,12 @@ class GongZhuGame {
 
         // Play the card
         hand.splice(cardIndex, 1);
+        
+        // Clear last completed trick when starting a new trick
+        if (this.currentTrick.length === 0) {
+            this.lastCompletedTrick = [];
+        }
+        
         this.currentTrick.push({ playerId, card });
 
         // Track lead suit
@@ -212,6 +220,7 @@ class GongZhuGame {
         }
 
         const trickCards = this.currentTrick.map(p => ({ playerId: p.playerId, card: p.card }));
+        this.lastCompletedTrick = [...this.currentTrick]; // Store for display
         this.currentTrick = [];
         this.leadSuit = null;
 
@@ -373,6 +382,7 @@ class GongZhuGame {
             currentPlayerIndex: this.currentPlayerIndex,
             currentPlayerId: this.players[this.currentPlayerIndex]?.id,
             currentTrick: this.currentTrick,
+            lastCompletedTrick: this.lastCompletedTrick,
             leadSuit: this.leadSuit,
             roundNumber: this.roundNumber
         };
