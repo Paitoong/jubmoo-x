@@ -17,6 +17,7 @@ class GongZhuClient {
 
     initializeElements() {
         // Screens
+        this.loginScreen = document.getElementById('login-screen');
         this.menuScreen = document.getElementById('menu-screen');
         this.lobbyScreen = document.getElementById('lobby-screen');
         this.gameScreen = document.getElementById('game-screen');
@@ -49,9 +50,17 @@ class GongZhuClient {
         // Emotion Elements
         this.emotionPicker = document.getElementById('emotion-picker');
         this.btnEmotionToggle = document.getElementById('btn-emotion-toggle');
+
+        // Login elements
+        this.usernameInput = document.getElementById('username');
+        this.passwordInput = document.getElementById('password');
+        this.loginError = document.getElementById('login-error');
     }
 
     setupEventListeners() {
+        // Login
+        document.getElementById('btn-login').addEventListener('click', () => this.login());
+
         // Menu buttons
         document.getElementById('btn-create-room').addEventListener('click', () => this.createRoom());
         document.getElementById('btn-join-room').addEventListener('click', () => this.showJoinForm());
@@ -116,8 +125,44 @@ class GongZhuClient {
         this.socket.on('error', (data) => this.onError(data));
     }
 
+    // Login Logic
+    async login() {
+        const username = this.usernameInput.value.trim();
+        const password = this.passwordInput.value.trim();
+
+        if (!username || !password) {
+            this.showLoginError('Please enter username and password');
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                this.showScreen(this.menuScreen);
+                this.playerNameInput.value = username; // Pre-fill name
+            } else {
+                this.showLoginError(data.message || 'Login failed');
+            }
+        } catch (error) {
+            this.showLoginError('Connection error');
+        }
+    }
+
+    showLoginError(message) {
+        this.loginError.textContent = message;
+        this.loginError.style.display = 'block';
+    }
+
     // UI Helper Methods
     showScreen(screen) {
+        this.loginScreen.classList.remove('active');
         this.menuScreen.classList.remove('active');
         this.lobbyScreen.classList.remove('active');
         this.gameScreen.classList.remove('active');

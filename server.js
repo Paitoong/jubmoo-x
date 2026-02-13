@@ -3,7 +3,9 @@ const http = require('http');
 const { Server } = require('socket.io');
 const { v4: uuidv4 } = require('uuid');
 const { GongZhuGame } = require('./game/GameLogic');
+
 const { Bot, createBot } = require('./game/Bot');
+const config = require('./config');
 
 const app = express();
 const server = http.createServer(app);
@@ -17,7 +19,19 @@ const io = new Server(server, {
 const PORT = process.env.PORT || 3000;
 
 // Serve static files
+// Serve static files
 app.use(express.static('public'));
+app.use(express.json());
+
+// Login Endpoint
+app.post('/api/login', (req, res) => {
+    const { username, password } = req.body;
+    if (username === config.USERNAME && password === config.PASSWORD) {
+        res.json({ success: true });
+    } else {
+        res.status(401).json({ success: false, message: 'Invalid credentials' });
+    }
+});
 
 // Game rooms storage
 const rooms = new Map();
@@ -125,6 +139,12 @@ io.on('connection', (socket) => {
 
     // Join an existing room
     socket.on('joinRoom', ({ roomId, playerData }) => {
+        // Enforce room code
+        if (!roomId) {
+            socket.emit('error', { message: 'Room code is required' });
+            return;
+        }
+
         const room = rooms.get(roomId);
         if (!room) {
             socket.emit('error', { message: 'Room not found' });
