@@ -424,11 +424,17 @@ body {
 .opponent-card-back {
     width: 40px;
     height: 56px;
-    background: linear-gradient(135deg, #c0392b, #8e44ad);
     border-radius: 5px;
     margin: 0 -15px;
-    border: 2px solid white;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+}
+
+.card-back-svg {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    pointer-events: none;
+    border-radius: 5px;
 }
 
 .opponent-top .opponent-card-back {
@@ -575,24 +581,29 @@ body {
 .card {
     width: 70px;
     height: 100px;
-    background: white;
+    background: transparent;
     border-radius: 8px;
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
-    font-size: 24px;
-    font-weight: bold;
     cursor: pointer;
     transition: all 0.2s ease;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
     position: relative;
     user-select: none;
+    overflow: hidden;
+}
+
+.card-svg {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    pointer-events: none;
+    border-radius: 8px;
 }
 
 .card:hover {
     transform: translateY(-10px);
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
+    filter: drop-shadow(0 10px 10px rgba(0, 0, 0, 0.4));
 }
 
 .card.valid {
@@ -600,7 +611,7 @@ body {
 }
 
 .card.valid:hover {
-    box-shadow: 0 0 20px var(--success-color);
+    filter: drop-shadow(0 0 10px var(--success-color));
 }
 
 .card.invalid {
@@ -614,7 +625,7 @@ body {
 
 .card.selected {
     transform: translateY(-20px);
-    box-shadow: 0 0 20px var(--warning-color);
+    filter: drop-shadow(0 0 10px var(--warning-color));
 }
 
 .card.hearts,
@@ -639,16 +650,21 @@ body {
 .mini-card {
     width: 35px;
     height: 50px;
-    background: white;
+    background: transparent;
     border-radius: 4px;
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
-    font-size: 12px;
-    font-weight: bold;
     margin: 2px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+}
+
+.mini-card-svg {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    pointer-events: none;
+    border-radius: 4px;
 }
 
 .mini-card.hearts,
@@ -908,6 +924,33 @@ body {
     50% {
         box-shadow: 0 0 30px 10px rgba(46, 204, 113, 0.7);
     }
+}
+
+/* Sound Toggle */
+.sound-toggle-container {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    z-index: 100;
+}
+
+.btn-sound-toggle {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    background: rgba(0, 0, 0, 0.5);
+    font-size: 24px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-sound-toggle:hover {
+    background: rgba(0, 0, 0, 0.7);
+    transform: scale(1.1);
 }
 
 /* Emotion / Reactions */

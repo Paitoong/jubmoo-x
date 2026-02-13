@@ -13,10 +13,31 @@ class GongZhuClient {
         this.jwtToken = localStorage.getItem('jwt_token');
         this.userProfile = null;
 
+        // Sound system
+        this.soundEnabled = localStorage.getItem('soundEnabled') !== 'false'; // default on
+        this.sounds = {
+            jackDiamond: new Audio('sound/jack-daimond.wav'),
+            queenSpade: new Audio('sound/queen-spade.wav'),
+            gameOver: new Audio('sound/game-over.wav'),
+            cardPlacement: new Audio('sound/card-placement.wav')
+        };
+        // Preload sounds
+        Object.values(this.sounds).forEach(s => s.load());
+
+        // Track which special card sounds have been played to avoid duplicates
+        this.playedCardSounds = new Set();
+
         this.initFacebookSDK();
         this.initializeElements();
         this.setupEventListeners();
         this.setupSocketListeners();
+
+        // Set initial sound button state
+        const soundBtn = document.getElementById('btn-sound-toggle');
+        if (soundBtn) {
+            soundBtn.textContent = this.soundEnabled ? '🔊' : '🔇';
+            soundBtn.title = this.soundEnabled ? 'Mute Sound' : 'Unmute Sound';
+        }
     }
 
     initializeElements() {
@@ -130,6 +151,9 @@ class GongZhuClient {
                 this.toggleEmotionPicker(false);
             });
         });
+
+        // Sound toggle
+        document.getElementById('btn-sound-toggle').addEventListener('click', () => this.toggleSound());
 
         // Close emotion picker when clicking outside
         document.addEventListener('click', (e) => {
@@ -517,7 +541,35 @@ class GongZhuClient {
         if (state.gamePhase === 'waiting') {
             this.updateLobbyPlayers();
         } else {
+            // Check current trick for special cards and play sounds
+            this.checkSpecialCardSounds(state);
             this.renderGame();
+        }
+    }
+
+    checkSpecialCardSounds(state) {
+        const trick = state.currentTrick || [];
+
+        // Reset tracked sounds when a new trick starts (empty trick)
+        if (trick.length === 0) {
+            this.playedCardSounds.clear();
+            return;
+        }
+
+        for (const play of trick) {
+            const card = play.card;
+            if (!card) continue;
+            const cardKey = card.id || `${card.rank}_${card.suit}`;
+
+            if (this.playedCardSounds.has(cardKey)) continue;
+
+            if (card.rank === 'J' && card.suit === 'diamonds') {
+                this.playedCardSounds.add(cardKey);
+                this.playSound('jackDiamond');
+            } else if (card.rank === 'Q' && card.suit === 'spades') {
+                this.playedCardSounds.add(cardKey);
+                this.playSound('queenSpade');
+            }
         }
     }
 
@@ -526,7 +578,8 @@ class GongZhuClient {
     }
 
     onCardPlayed(data) {
-        // Animation will be handled by gameState update
+        // Play card placement sound for every card played
+        this.playSound('cardPlacement');
     }
 
     onTrickComplete(data) {
@@ -613,13 +666,14 @@ class GongZhuClient {
         const validCards = this.gameState.validCards || [];
         const validIds = validCards.map(c => c.id);
 
-        // Sort hand by suit and rank
-        const suitOrder = { spades: 0, hearts: 1, clubs: 2, diamonds: 3 };
+        // Sort hand by suit and rank (low to high)
+        const suitOrder = { clubs: 0, diamonds: 1, spades: 2, hearts: 3 };
+        const rankValues = { '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9, '10': 10, 'J': 11, 'Q': 12, 'K': 13, 'A': 14 };
         const sortedHand = [...hand].sort((a, b) => {
             if (suitOrder[a.suit] !== suitOrder[b.suit]) {
                 return suitOrder[a.suit] - suitOrder[b.suit];
             }
-            return b.getValue ? b.getValue() - a.getValue() : 0;
+            return (rankValues[a.rank] || 0) - (rankValues[b.rank] || 0);
         });
 
         let html = '';
@@ -632,12 +686,13 @@ class GongZhuClient {
                 isValid ? 'valid' : (this.gameState.gamePhase === 'playing' ? 'invalid' : '')
             ].filter(Boolean).join(' ');
 
+            const svgPath = this.getCardSvgPath(card.rank, card.suit);
+
             html += `
                 <div class="${classes}" 
                      data-card-id="${card.id}"
                      onclick="game.onCardClick('${card.id}')">
-                    <span class="card-rank">${card.rank}</span>
-                    <span class="card-suit">${this.getSuitSymbol(card.suit)}</span>
+                    <img src="${svgPath}" alt="${card.rank} of ${card.suit}" class="card-svg" draggable="false">
                 </div>
             `;
         }
@@ -692,7 +747,7 @@ class GongZhuClient {
                 const cardCount = opponent.cardCount || 0;
                 let cardsHtml = '';
                 for (let j = 0; j < cardCount; j++) {
-                    cardsHtml += '<div class="opponent-card-back"></div>';
+                    cardsHtml += '<div class="opponent-card-back"><img src="svg_cards/card_back.svg" alt="card back" class="card-back-svg" draggable="false"></div>';
                 }
                 element.querySelector('.opponent-cards').innerHTML = cardsHtml;
 
@@ -708,12 +763,22 @@ class GongZhuClient {
         }
         if (!container) return;
 
+        // Sort taken cards by suit and rank (low to high)
+        const suitOrder = { clubs: 0, diamonds: 1, spades: 2, hearts: 3 };
+        const rankValues = { '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9, '10': 10, 'J': 11, 'Q': 12, 'K': 13, 'A': 14 };
+        const sortedCards = [...cards].sort((a, b) => {
+            if (suitOrder[a.suit] !== suitOrder[b.suit]) {
+                return suitOrder[a.suit] - suitOrder[b.suit];
+            }
+            return (rankValues[a.rank] || 0) - (rankValues[b.rank] || 0);
+        });
+
         let html = '';
-        for (const card of cards) {
+        for (const card of sortedCards) {
+            const svgPath = this.getCardSvgPath(card.rank, card.suit);
             html += `
                 <div class="mini-card ${card.suit}">
-                    <span>${card.rank}</span>
-                    <span>${this.getSuitSymbol(card.suit)}</span>
+                    <img src="${svgPath}" alt="${card.rank} of ${card.suit}" class="mini-card-svg" draggable="false">
                 </div>
             `;
         }
@@ -736,12 +801,12 @@ class GongZhuClient {
             const relativePos = (playerIndex - myIndex + 4) % 4;
             const position = positions[relativePos];
             const card = play.card;
+            const svgPath = this.getCardSvgPath(card.rank, card.suit);
 
             html += `
                 <div class="trick-card ${position}">
                     <div class="card ${card.suit}">
-                        <span class="card-rank">${card.rank}</span>
-                        <span class="card-suit">${this.getSuitSymbol(card.suit)}</span>
+                        <img src="${svgPath}" alt="${card.rank} of ${card.suit}" class="card-svg" draggable="false">
                     </div>
                 </div>
             `;
@@ -814,6 +879,17 @@ class GongZhuClient {
             spades: '♠'
         };
         return symbols[suit] || suit;
+    }
+
+    getCardSvgPath(rank, suit) {
+        const rankMap = {
+            'A': 'ace',
+            'K': 'king',
+            'Q': 'queen',
+            'J': 'jack'
+        };
+        const rankName = rankMap[rank] || rank;
+        return `svg_cards/${rankName}_of_${suit}.svg`;
     }
 
     getPlayerPosition(playerId) {
@@ -898,6 +974,9 @@ class GongZhuClient {
         // Show/hide new game button based on host status
         document.getElementById('btn-new-game').style.display = this.isHost ? 'inline-block' : 'none';
         this.gameoverModal.classList.add('active');
+
+        // Play game over sound
+        this.playSound('gameOver');
     }
 
     nextRound() {
@@ -911,6 +990,26 @@ class GongZhuClient {
 
     backToMenu() {
         window.location.reload();
+    }
+
+    // Sound Logic
+    playSound(name) {
+        if (!this.soundEnabled) return;
+        const sound = this.sounds[name];
+        if (sound) {
+            sound.currentTime = 0;
+            sound.play().catch(() => {});
+        }
+    }
+
+    toggleSound() {
+        this.soundEnabled = !this.soundEnabled;
+        localStorage.setItem('soundEnabled', this.soundEnabled);
+        const btn = document.getElementById('btn-sound-toggle');
+        if (btn) {
+            btn.textContent = this.soundEnabled ? '🔊' : '🔇';
+            btn.title = this.soundEnabled ? 'Mute Sound' : 'Unmute Sound';
+        }
     }
 
     // Emotion Logic
