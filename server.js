@@ -181,7 +181,13 @@ async function handleBotTurn(roomId) {
     const gameState = {
         currentTrick: room.game.currentTrick,
         leadSuit: room.game.leadSuit,
-        tricksTaken: room.game.tricksTaken
+        tricksTaken: room.game.tricksTaken,
+        botId: currentPlayer.id,
+        hand: room.game.hands[currentPlayer.id],
+        hands: room.game.hands, // all hands (for card counting)
+        scores: room.game.scores,
+        players: room.game.players,
+        targetScore: room.game.targetScore
     };
 
     const chosenCard = bot.chooseCard ?

@@ -100,7 +100,9 @@ class GongZhuClient {
     setupEventListeners() {
         // Login
         document.getElementById('btn-login').addEventListener('click', () => this.login());
-        document.getElementById('btn-login').addEventListener('click', () => this.login());
+        document.getElementById('password').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') this.login();
+        });
         document.getElementById('btn-fb-login').addEventListener('click', () => this.loginWithFacebook());
         document.getElementById('btn-to-register').addEventListener('click', () => this.showScreen(this.registerScreen));
 
