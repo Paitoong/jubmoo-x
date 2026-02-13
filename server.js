@@ -5,7 +5,11 @@ const { v4: uuidv4 } = require('uuid');
 const { GongZhuGame } = require('./game/GameLogic');
 
 const { Bot, createBot } = require('./game/Bot');
+
 const config = require('./config');
+const db = require('./db');
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcrypt');
 
 const app = express();
 const server = http.createServer(app);
@@ -23,13 +27,123 @@ const PORT = process.env.PORT || 3000;
 app.use(express.static('public'));
 app.use(express.json());
 
-// Login Endpoint
-app.post('/api/login', (req, res) => {
+// Middleware to verify JWT
+const verifyToken = (req, res, next) => {
+    const token = req.headers['authorization'];
+    if (!token) return res.status(403).json({ success: false, message: 'No token provided' });
+
+    jwt.verify(token.split(' ')[1], config.JWT_SECRET, (err, decoded) => {
+        if (err) return res.status(401).json({ success: false, message: 'Unauthorized' });
+        req.userId = decoded.id;
+        next();
+    });
+};
+
+// Login Endpoint (Standard)
+app.post('/api/login', async (req, res) => {
     const { username, password } = req.body;
-    if (username === config.USERNAME && password === config.PASSWORD) {
-        res.json({ success: true });
-    } else {
-        res.status(401).json({ success: false, message: 'Invalid credentials' });
+
+    try {
+
+
+        const user = await db.getUserByUsername(username);
+
+        if (!user) {
+            return res.status(401).json({ success: false, message: 'Invalid credentials' });
+        }
+
+        if (!user.password_hash) {
+            // User might be a FB user or old admin without hash
+            return res.status(401).json({ success: false, message: 'Invalid credentials or login via Facebook' });
+        }
+
+        const match = await bcrypt.compare(password, user.password_hash);
+        if (!match) {
+            return res.status(401).json({ success: false, message: 'Invalid credentials' });
+        }
+
+        const token = jwt.sign({ id: user.id, username: user.username }, config.JWT_SECRET, { expiresIn: '24h' });
+        res.json({ success: true, token, user: { id: user.id, name: user.name, email: user.email, avatar: user.avatar } });
+
+    } catch (error) {
+        console.error('Login error:', error);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+});
+
+// Register Endpoint
+app.post('/api/register', async (req, res) => {
+    const { username, password, email, name, avatar } = req.body;
+
+    if (!username || !password || !email || !name) {
+        return res.status(400).json({ success: false, message: 'Missing required fields' });
+    }
+
+    try {
+        const existingUser = await db.getUserByUsername(username);
+        if (existingUser) {
+            return res.status(400).json({ success: false, message: 'Username already taken' });
+        }
+        const existingEmail = await db.getUserByEmail(email);
+        if (existingEmail) {
+            return res.status(400).json({ success: false, message: 'Email already registered' });
+        }
+
+        const passwordHash = await bcrypt.hash(password, 10);
+        const newUser = await db.createUser(email, name, null, avatar || '😀', username, passwordHash);
+
+        const token = jwt.sign({ id: newUser.id, username: newUser.username }, config.JWT_SECRET, { expiresIn: '24h' });
+        res.json({ success: true, token, user: { id: newUser.id, name: newUser.name, email: newUser.email, avatar: newUser.avatar } });
+
+    } catch (error) {
+        console.error('Register error:', error);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+});
+
+// Facebook Login Endpoint
+app.post('/api/auth/facebook', async (req, res) => {
+    const { email, name, facebookId, avatar } = req.body;
+
+    try {
+        let user = await db.getUserByFacebookId(facebookId);
+        if (!user) {
+            // Check if email exists to link accounts, otherwise create new
+            const existingEmail = await db.getUserByEmail(email);
+            if (existingEmail) {
+                user = existingEmail;
+                // Ideally update facebook_id here
+            } else {
+                user = await db.createUser(email, name, facebookId, avatar || '😀');
+            }
+        }
+
+        const token = jwt.sign({ id: user.id }, config.JWT_SECRET, { expiresIn: '24h' });
+        res.json({ success: true, token, user });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+});
+
+// Profile Endpoints
+app.get('/api/profile', verifyToken, async (req, res) => {
+    try {
+        const result = await db.query('SELECT id, email, name, avatar FROM users WHERE id = $1', [req.userId]);
+        if (result.rows.length === 0) return res.status(404).json({ success: false, message: 'User not found' });
+        res.json({ success: true, user: result.rows[0] });
+    } catch (err) {
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+});
+
+app.put('/api/profile', verifyToken, async (req, res) => {
+    const { name, avatar } = req.body;
+    try {
+        const user = await db.updateUser(req.userId, name, avatar);
+        res.json({ success: true, user });
+    } catch (err) {
+        res.status(500).json({ success: false, message: 'Server error' });
     }
 });
 
@@ -134,7 +248,12 @@ io.on('connection', (socket) => {
         playerRooms.set(socket.id, { roomId, playerId });
 
         socket.join(roomId);
-        socket.emit('roomCreated', { roomId, playerId, gameState: game.getGameState(playerId) });
+        socket.emit('roomCreated', {
+            roomId,
+            playerId,
+            gameState: game.getGameState(playerId),
+            config: { emotionDelay: config.EMOTION_DELAY }
+        });
     });
 
     // Join an existing room
@@ -175,7 +294,12 @@ io.on('connection', (socket) => {
         playerRooms.set(socket.id, { roomId, playerId });
 
         socket.join(roomId);
-        socket.emit('roomJoined', { roomId, playerId, gameState: room.game.getGameState(playerId) });
+        socket.emit('roomJoined', {
+            roomId,
+            playerId,
+            gameState: room.game.getGameState(playerId),
+            config: { emotionDelay: config.EMOTION_DELAY }
+        });
 
         // Notify others
         socket.to(roomId).emit('playerJoined', { player });

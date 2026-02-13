@@ -9,7 +9,11 @@ class GongZhuClient {
         this.playerName = 'Player';
         this.playerAvatar = '😀';
         this.selectedCard = null;
+        this.emotionDelay = 5000; // Default, will be updated from server
+        this.jwtToken = localStorage.getItem('jwt_token');
+        this.userProfile = null;
 
+        this.initFacebookSDK();
         this.initializeElements();
         this.setupEventListeners();
         this.setupSocketListeners();
@@ -18,7 +22,9 @@ class GongZhuClient {
     initializeElements() {
         // Screens
         this.loginScreen = document.getElementById('login-screen');
+        this.registerScreen = document.getElementById('register-screen');
         this.menuScreen = document.getElementById('menu-screen');
+        this.profileScreen = document.getElementById('profile-screen');
         this.lobbyScreen = document.getElementById('lobby-screen');
         this.gameScreen = document.getElementById('game-screen');
 
@@ -54,12 +60,38 @@ class GongZhuClient {
         // Login elements
         this.usernameInput = document.getElementById('username');
         this.passwordInput = document.getElementById('password');
+        this.passwordInput = document.getElementById('password');
         this.loginError = document.getElementById('login-error');
+
+        // Register elements
+        this.regUsernameInput = document.getElementById('reg-username');
+        this.regPasswordInput = document.getElementById('reg-password');
+        this.regEmailInput = document.getElementById('reg-email');
+        this.regNameInput = document.getElementById('reg-name');
+        this.registerError = document.getElementById('register-error');
+
+        // Profile elements
+        this.profileEmail = document.getElementById('profile-email');
+        this.profileName = document.getElementById('profile-name');
+        this.profileAvatarPicker = document.getElementById('profile-avatar-picker');
     }
 
     setupEventListeners() {
         // Login
         document.getElementById('btn-login').addEventListener('click', () => this.login());
+        document.getElementById('btn-login').addEventListener('click', () => this.login());
+        document.getElementById('btn-fb-login').addEventListener('click', () => this.loginWithFacebook());
+        document.getElementById('btn-to-register').addEventListener('click', () => this.showScreen(this.registerScreen));
+
+        // Register
+        document.getElementById('btn-register').addEventListener('click', () => this.register());
+        document.getElementById('btn-back-login').addEventListener('click', () => this.showScreen(this.loginScreen));
+
+        // Profile
+        document.getElementById('btn-profile').addEventListener('click', () => this.showProfile());
+        document.getElementById('btn-save-profile').addEventListener('click', () => this.saveProfile());
+        document.getElementById('btn-profile-back').addEventListener('click', () => this.showScreen(this.menuScreen));
+        document.getElementById('btn-logout').addEventListener('click', () => this.logout());
 
         // Menu buttons
         document.getElementById('btn-create-room').addEventListener('click', () => this.createRoom());
@@ -145,8 +177,13 @@ class GongZhuClient {
             const data = await response.json();
 
             if (data.success) {
+                this.jwtToken = data.token;
+                localStorage.setItem('jwt_token', data.token);
+                this.userProfile = data.user;
                 this.showScreen(this.menuScreen);
-                this.playerNameInput.value = username; // Pre-fill name
+                this.playerNameInput.value = this.userProfile.name || username; // Pre-fill name
+                this.playerAvatar = this.userProfile.avatar || '😀';
+                this.loadProfile(); // Refresh profile data
             } else {
                 this.showLoginError(data.message || 'Login failed');
             }
@@ -160,10 +197,189 @@ class GongZhuClient {
         this.loginError.style.display = 'block';
     }
 
+    // Facebook Login
+    initFacebookSDK() {
+        window.fbAsyncInit = function () {
+            FB.init({
+                appId: 'YOUR_APP_ID', // Replace with config if available, or fetch
+                cookie: true,
+                xfbml: true,
+                version: 'v16.0'
+            });
+            FB.AppEvents.logPageView();
+        };
+    }
+
+    loginWithFacebook() {
+        if (typeof FB === 'undefined') {
+            this.showLoginError('Facebook SDK not loaded');
+            return;
+        }
+
+        FB.login((response) => {
+            if (response.authResponse) {
+                this.handleFacebookLogin(response.authResponse);
+            } else {
+                this.showLoginError('Facebook login cancelled');
+            }
+        }, { scope: 'public_profile,email' });
+    }
+
+    async handleFacebookLogin(authResponse) {
+        FB.api('/me', { fields: 'name,email,picture' }, async (response) => {
+            try {
+                const apiRes = await fetch('/api/auth/facebook', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: response.email,
+                        name: response.name,
+                        facebookId: response.id,
+                        avatar: '😀' // Default, or map from picture
+                    })
+                });
+
+                const data = await apiRes.json();
+                if (data.success) {
+                    this.jwtToken = data.token;
+                    localStorage.setItem('jwt_token', data.token);
+                    this.userProfile = data.user;
+                    this.showScreen(this.menuScreen);
+                    this.playerNameInput.value = this.userProfile.name;
+                    this.playerAvatar = this.userProfile.avatar;
+                    this.loadProfile();
+                } else {
+                    this.showLoginError(data.message || 'Facebook login failed');
+                }
+            } catch (error) {
+                this.showLoginError('Connection error');
+            }
+        });
+    }
+
+    // Profile Management
+    async loadProfile() {
+        if (!this.jwtToken) return;
+
+        try {
+            const response = await fetch('/api/profile', {
+                headers: { 'Authorization': `Bearer ${this.jwtToken}` }
+            });
+            const data = await response.json();
+            if (data.success) {
+                this.userProfile = data.user;
+                this.profileEmail.value = this.userProfile.email || 'N/A';
+                this.profileName.value = this.userProfile.name;
+
+                // Populate avatar picker in profile
+                // (Simplified: just copying the main picker logic or re-rendering)
+                this.profileAvatarPicker.innerHTML = this.avatarPicker.innerHTML;
+                this.profileAvatarPicker.querySelectorAll('.avatar-option').forEach(opt => {
+                    opt.classList.remove('selected');
+                    if (opt.dataset.avatar === this.userProfile.avatar) {
+                        opt.classList.add('selected');
+                    }
+                    opt.addEventListener('click', (e) => {
+                        this.profileAvatarPicker.querySelectorAll('.avatar-option').forEach(o => o.classList.remove('selected'));
+                        e.target.classList.add('selected');
+                    });
+                });
+            }
+        } catch (error) {
+            console.error('Failed to load profile', error);
+        }
+    }
+
+    showProfile() {
+        this.loadProfile();
+        this.showScreen(this.profileScreen);
+    }
+
+    async saveProfile() {
+        const name = this.profileName.value.trim();
+        const selectedAvatar = this.profileAvatarPicker.querySelector('.selected')?.dataset.avatar || '😀';
+
+        try {
+            const response = await fetch('/api/profile', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${this.jwtToken}`
+                },
+                body: JSON.stringify({ name, avatar: selectedAvatar })
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                this.userProfile = data.user;
+                this.playerNameInput.value = data.user.name;
+                this.playerAvatar = data.user.avatar;
+                alert('Profile updated!');
+                this.showScreen(this.menuScreen);
+            } else {
+                alert(data.message || 'Update failed');
+            }
+        } catch (error) {
+            alert('Connection error');
+        }
+    }
+
+    // Register Logic
+    async register() {
+        const username = this.regUsernameInput.value.trim();
+        const password = this.regPasswordInput.value.trim();
+        const email = this.regEmailInput.value.trim();
+        const name = this.regNameInput.value.trim();
+
+        if (!username || !password || !email || !name) {
+            this.showRegisterError('Please fill in all fields');
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password, email, name })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                this.jwtToken = data.token;
+                localStorage.setItem('jwt_token', data.token);
+                this.userProfile = data.user;
+                this.showScreen(this.menuScreen);
+                this.playerNameInput.value = this.userProfile.name;
+                this.playerAvatar = this.userProfile.avatar || '😀';
+                this.loadProfile();
+                alert('Registration successful! Welcome!');
+            } else {
+                this.showRegisterError(data.message || 'Registration failed');
+            }
+        } catch (error) {
+            this.showRegisterError('Connection error');
+        }
+    }
+
+    showRegisterError(message) {
+        this.registerError.textContent = message;
+        this.registerError.style.display = 'block';
+    }
+
+    logout() {
+        localStorage.removeItem('jwt_token');
+        this.jwtToken = null;
+        this.userProfile = null;
+        window.location.reload();
+    }
+
     // UI Helper Methods
     showScreen(screen) {
         this.loginScreen.classList.remove('active');
+        this.registerScreen.classList.remove('active');
         this.menuScreen.classList.remove('active');
+        this.profileScreen.classList.remove('active');
         this.lobbyScreen.classList.remove('active');
         this.gameScreen.classList.remove('active');
         screen.classList.add('active');
@@ -250,6 +466,9 @@ class GongZhuClient {
         this.roomId = data.roomId;
         this.isHost = true;
         this.gameState = data.gameState;
+        if (data.config && data.config.emotionDelay) {
+            this.emotionDelay = data.config.emotionDelay;
+        }
 
         this.displayRoomCode.textContent = this.roomId;
         this.hostActions.style.display = 'flex';
@@ -264,6 +483,9 @@ class GongZhuClient {
         this.roomId = data.roomId;
         this.isHost = false;
         this.gameState = data.gameState;
+        if (data.config && data.config.emotionDelay) {
+            this.emotionDelay = data.config.emotionDelay;
+        }
 
         this.displayRoomCode.textContent = this.roomId;
         this.hostActions.style.display = 'none';
@@ -752,7 +974,7 @@ class GongZhuClient {
             if (floatingEl.parentNode) {
                 floatingEl.parentNode.removeChild(floatingEl);
             }
-        }, 3000);
+        }, this.emotionDelay);
     }
 }
 

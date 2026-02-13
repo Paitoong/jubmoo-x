@@ -48,7 +48,44 @@
                         <input type="password" id="password" placeholder="Password">
                     </div>
                     <button class="btn btn-primary" id="btn-login" style="width: 100%; margin-top: 10px;">Login</button>
+                    <div class="divider" style="margin: 15px 0; text-align: center; color: #666;">OR</div>
+                    <button class="btn btn-facebook" id="btn-fb-login"
+                        style="width: 100%; background-color: #1877f2; color: white;">Login with Facebook</button>
+                    <button class="btn btn-secondary" id="btn-to-register" style="width: 100%; margin-top: 10px;">Create
+                        Account</button>
                     <p id="login-error" style="color: #ff6b6b; margin-top: 10px; display: none;"></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Register Screen -->
+        <div id="register-screen" class="screen">
+            <div class="menu-container">
+                <h1 class="game-title">JubMoo</h1>
+                <h2 class="game-subtitle">Register</h2>
+
+                <div class="player-setup">
+                    <div class="input-group">
+                        <label for="reg-username">Username</label>
+                        <input type="text" id="reg-username" placeholder="Choose a username">
+                    </div>
+                    <div class="input-group">
+                        <label for="reg-password">Password</label>
+                        <input type="password" id="reg-password" placeholder="Choose a password">
+                    </div>
+                    <div class="input-group">
+                        <label for="reg-email">Email</label>
+                        <input type="email" id="reg-email" placeholder="Enter your email">
+                    </div>
+                    <div class="input-group">
+                        <label for="reg-name">Display Name</label>
+                        <input type="text" id="reg-name" placeholder="Enter your display name">
+                    </div>
+                    <button class="btn btn-primary" id="btn-register"
+                        style="width: 100%; margin-top: 10px;">Register</button>
+                    <button class="btn btn-secondary" id="btn-back-login" style="width: 100%; margin-top: 10px;">Back to
+                        Login</button>
+                    <p id="register-error" style="color: #ff6b6b; margin-top: 10px; display: none;"></p>
                 </div>
             </div>
         </div>
@@ -126,6 +163,8 @@
                     <button class="btn btn-primary" id="btn-create-room">Create Room</button>
                     <button class="btn btn-secondary" id="btn-join-room">Join Room</button>
                     <button class="btn btn-info" id="btn-how-to-play">How to Play</button>
+                    <button class="btn" id="btn-profile"
+                        style="background-color: #6c5ce7; color: white;">Profile</button>
                 </div>
 
                 <div class="join-room-form" id="join-room-form" style="display: none;">
@@ -165,6 +204,32 @@
             </div>
 
             <button class="btn btn-danger" id="btn-leave-room">Leave Room</button>
+        </div>
+    </div>
+
+    <!-- Profile Screen -->
+    <div id="profile-screen" class="screen">
+        <div class="menu-container">
+            <h2>My Profile</h2>
+            <div class="player-setup">
+                <div class="input-group">
+                    <label>Email</label>
+                    <input type="text" id="profile-email" disabled style="opacity: 0.7;">
+                </div>
+                <div class="input-group">
+                    <label>Name</label>
+                    <input type="text" id="profile-name" placeholder="Enter your name">
+                </div>
+                <div class="input-group">
+                    <label>Avatar</label>
+                    <div class="avatar-picker" id="profile-avatar-picker">
+                        <!-- Will be populated by JS -->
+                    </div>
+                </div>
+                <button class="btn btn-primary" id="btn-save-profile">Save Changes</button>
+                <button class="btn btn-secondary" id="btn-profile-back">Back to Menu</button>
+                <button class="btn btn-danger" id="btn-logout" style="margin-top: 20px;">Logout</button>
+            </div>
         </div>
     </div>
 
@@ -317,6 +382,10 @@
     </div>
     </div>
 
+    </div>
+
+    <!-- Facebook SDK -->
+    <script async defer crossorigin="anonymous" src="https://connect.facebook.net/en_US/sdk.js"></script>
     <script src="/socket.io/socket.io.js"></script>
     <script src="js/game.js"></script>
 </body>
