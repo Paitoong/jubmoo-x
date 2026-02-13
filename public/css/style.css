@@ -123,8 +123,15 @@ body {
 }
 
 @keyframes pigBounce {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-10px); }
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-10px);
+    }
 }
 
 .pig-logo:hover {
@@ -132,9 +139,19 @@ body {
 }
 
 @keyframes pigWiggle {
-    0%, 100% { transform: rotate(0deg); }
-    25% { transform: rotate(-10deg); }
-    75% { transform: rotate(10deg); }
+
+    0%,
+    100% {
+        transform: rotate(0deg);
+    }
+
+    25% {
+        transform: rotate(-10deg);
+    }
+
+    75% {
+        transform: rotate(10deg);
+    }
 }
 
 .game-title {
@@ -199,16 +216,16 @@ body {
 }
 
 .avatar-option {
-    font-size: 32px;
+    font-size: 24px;
     cursor: pointer;
-    padding: 8px;
+    padding: 4px;
     border-radius: 50%;
     transition: all 0.2s ease;
     border: 3px solid transparent;
 }
 
 .avatar-option:hover {
-    transform: scale(1.2);
+    transform: scale(1.1);
 }
 
 .avatar-option.selected {
@@ -600,11 +617,13 @@ body {
     box-shadow: 0 0 20px var(--warning-color);
 }
 
-.card.hearts, .card.diamonds {
+.card.hearts,
+.card.diamonds {
     color: #e74c3c;
 }
 
-.card.clubs, .card.spades {
+.card.clubs,
+.card.spades {
     color: #2c3e50;
 }
 
@@ -632,15 +651,18 @@ body {
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
-.mini-card.hearts, .mini-card.diamonds {
+.mini-card.hearts,
+.mini-card.diamonds {
     color: #e74c3c;
 }
 
-.mini-card.clubs, .mini-card.spades {
+.mini-card.clubs,
+.mini-card.spades {
     color: #2c3e50;
 }
 
-.taken-cards, .my-taken-cards {
+.taken-cards,
+.my-taken-cards {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
@@ -737,7 +759,10 @@ body {
     color: var(--warning-color);
 }
 
-.round-scores, .total-scores, .final-scores, .game-result {
+.round-scores,
+.total-scores,
+.final-scores,
+.game-result {
     margin: 20px 0;
     text-align: left;
 }
@@ -828,7 +853,8 @@ body {
         font-size: 32px;
     }
 
-    .menu-container, .lobby-container {
+    .menu-container,
+    .lobby-container {
         padding: 20px;
     }
 }
@@ -839,6 +865,7 @@ body {
         transform: translateY(-100px) rotate(180deg);
         opacity: 0;
     }
+
     to {
         transform: translateY(0) rotate(0);
         opacity: 1;
@@ -850,6 +877,7 @@ body {
         transform: scale(1.2);
         opacity: 0;
     }
+
     to {
         transform: scale(1);
         opacity: 1;
@@ -869,7 +897,105 @@ body {
     animation: winnerPulse 0.5s ease-in-out 3;
 }
 
+
 @keyframes winnerPulse {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(46, 204, 113, 0.7); }
-    50% { box-shadow: 0 0 30px 10px rgba(46, 204, 113, 0.7); }
+
+    0%,
+    100% {
+        box-shadow: 0 0 0 0 rgba(46, 204, 113, 0.7);
+    }
+
+    50% {
+        box-shadow: 0 0 30px 10px rgba(46, 204, 113, 0.7);
+    }
+}
+
+/* Emotion / Reactions */
+.emotion-container {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    z-index: 100;
+}
+
+.btn-emotion-toggle {
+    font-size: 24px;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #f1c40f, #f39c12);
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    transition: transform 0.2s;
+}
+
+.btn-emotion-toggle:hover {
+    transform: scale(1.1);
+}
+
+.emotion-picker {
+    position: absolute;
+    bottom: 60px;
+    right: 0;
+    background: rgba(255, 255, 255, 0.95);
+    padding: 10px;
+    border-radius: 10px;
+    display: none;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
+    width: 200px;
+}
+
+.emotion-picker.active {
+    display: grid;
+}
+
+.emotion-item {
+    font-size: 24px;
+    cursor: pointer;
+    text-align: center;
+    padding: 5px;
+    border-radius: 5px;
+    transition: background 0.2s;
+}
+
+.emotion-item:hover {
+    background: rgba(0, 0, 0, 0.1);
+    transform: scale(1.2);
+}
+
+.floating-emotion {
+    position: absolute;
+    font-size: 40px;
+    pointer-events: none;
+    animation: floatUp 3s ease-out forwards;
+    z-index: 200;
+    text-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+}
+
+@keyframes floatUp {
+    0% {
+        transform: translateY(0) scale(0.5);
+        opacity: 0;
+    }
+
+    10% {
+        transform: translateY(-10px) scale(1.2);
+        opacity: 1;
+    }
+
+    20% {
+        transform: translateY(-15px) scale(1);
+    }
+
+    80% {
+        opacity: 1;
+    }
+
+    100% {
+        transform: translateY(-100px);
+        opacity: 0;
+    }
 }

@@ -14,7 +14,7 @@ This is a Chinese version of Hearts, which was taught to me by Guo Juan. It is p
 An approximate English translation of the name of the game is Chase the Pig: zhu means pig or boar and gong is to root out, or force out of hiding. In the game, the queen of spades is a penalty card, known as the pig - players may try to drive out the pig by leading spades; also the loser of the game is known as the pig, and may be required to grovel under the table as a penalty.
 
 #Players, Cards and Deal
-The game is for four or five players using a standard 52 card pack. The cards in each suit rank from high to low: A K Q J 10 9 8 7 6 5 4 3 2. Four can play as individuals or as partners - partners sit opposite. When 5 play it is necessary to take out two cards - the twos of clubs and diamonds. At the beginning of the hand all the cards are dealt out equally to the players. Unlike in Western Hearts, there is no passing of cards. Everyone plays with the cards they are dealt.
+The game is for four players using a standard 52 card pack. The cards in each suit rank from high to low: A K Q J 10 9 8 7 6 5 4 3 2. Four can play as individuals or as partners - partners sit opposite. When 5 play it is necessary to take out two cards - the twos of clubs and diamonds. At the beginning of the hand all the cards are dealt out equally to the players. Unlike in Western Hearts, there is no passing of cards. Everyone plays with the cards they are dealt.
 
 Deal and play are anticlockwise. As usual in Chinese games the cards are not actually dealt out by a dealer: instead the deck is stacked face down and each player in turn takes a card from the top of the pile until all the cards have been taken.
 
@@ -32,51 +32,29 @@ Ace of hearts	-50
 King of hearts	-40
 Queen of hearts	-30
 Jack of hearts	-20
-10, 9, 8, 7, 6, 5 of hearts	-10 each
-4, 3, 2 of hearts	0 each
-Jack of diamonds (sheep)	+100
+10 of hearts -10
+9 of hearts	-9
+8 of hearts	-8
+7 of hearts	-7
+6 of hearts	-6
+5 of hearts	-5
+4 of hearts	-4
+3 of hearts	-3
+2 of hearts	-2
+Jack of diamonds (sheep) +100
+
 In addition the ten of clubs counts +50 if the player who takes it takes no other scoring cards. If the player does take other scoring cards, the ten of clubs counts nothing in itself, but doubles the value of all other scoring cards taken by that player. Note that the 4, 3 and 2 of hearts are scoring cards, even though they score zero, so the ten of clubs plus the three of hearts score twice zero which is zero.
 
-If one player takes all the hearts, they score +200 instead of -200. Note that it is necessary to take the 4, 3 and 2 of hearts to get this plus score, but you don't need the pig (queen of spades). If a player takes all the hearts and the pig as well, then the score for the pig becomes +100, making a total of +300. The sheep (jack of diamonds) is still worth a further +100 to a player who takes all the hearts.
+If one player takes all the hearts, they score +194 instead of -194 and if a player takes all the hearts and the pig as well, then the score for the pig becomes +100, making a total of +294. The sheep (jack of diamonds) is still worth a further +100 to a player who takes all the hearts. But if The sheep (jack of diamonds) is taken by another player, then the value of the sheep is -100 instead of +100.
 
 During the play, the hearts, pig, sheep and ten of clubs are kept face up in front of the players who take them in tricks. All the other cards played to tricks are turned face down when the trick is complete, and are kept in a single heap.
 
 #Exposing cards
 There are four cards which may be exposed by their holders before the start of play: ace of hearts, queen of spades, jack of diamonds, ten of clubs.
 
-Heart Ace PIG SHEEP Club Ten
-
-The effect of exposing a card is basically to double its value. Specifically:
-
-Ace of hearts exposed
-All hearts are worth double. If a player takes all the hearts this will therefore be worth +400 instead of +200.
-Queen of spades exposed
-The pig is worth -200 instead of -100 (or +200 to a player who takes all the hearts)
-Jack of diamonds exposed
-The sheep is worth +200 instead of +100.
-Ten of clubs exposed
-The ten of clubs quadruples the value of all scoring cards taken by the same player instead of doubling them. Therefore if the ten of clubs and pig are both exposed and the same player takes both, that player gets -800 (4 x -200). If the player who takes the exposed ten of clubs gets no other scoring cards it is worth +100 rather then +50.
-If you expose a card, you are not allowed to play it to the first trick in which that suit is led, unless you have no other cards of that suit. For example, if you expose the queen of spades, then the first time that someone leads a spade you are not allowed to play the queen if you have other spades. The other players can take advantage of this to get rid of their ace and king of spades safely on the first trick of the suit - safe, that is, unless you have sneakily exposed the queen of spades having no other spades.
-
 If you lead the suit of your exposed card yourself, and the suit has not been led before, then you must not lead the exposed card itself unless it is the only card you have in that suit.
 
 #Scoring
-Keep a cumulative total of each player's score - positive or negative. When a player reaches minus 1000 they have lost, and a new game is started. The penalty for losing is that you are a pig; you are given a long narrow strip of paper and you must put one end in your mouth; the strip of paper hangs there until someone else loses a game, at which time you can give it to them. On the other hand, if you lose again, you get another strip of paper to hang from your mouth.
+Keep a cumulative total of each player's score - positive or negative. When a player reaches minus 1000 points (target points) they have lost, and a new game is started. The penalty for losing is that you are a pig; you are given a long narrow strip of paper and you must put one end in your mouth; the strip of paper hangs there until someone else loses a game, at which time you can give it to them. On the other hand, if you lose again, you get another strip of paper to hang from your mouth.
 
 In addition, as previously mentioned, the loser may also be required to grovel under the table.
-
-#Variations
-The following variation was contributed by Theodore Hwa. The game is as described above, with the following differences:
-
-Value of hearts: The hearts 10, 9, 8, ..., 2 are scored the negative of their face value, except for the 4 of hearts which is -10 instead of -4 (this exception is made so that the total of all the hearts remains -200).
-When any player takes all the hearts, the values of the pig and sheep are interchanged for all players for that deal. That is, if one player takes all the hearts and someone else takes the pig, then the player who took the pig scores +100 for it, etc. The pig and sheep always cancel each other out, even for the player who took all the hearts.
-A player who takes all the point cards (all hearts, queen of spades, jack of diamonds, ten of clubs) scores +1000.
-If any player reaches -1000 exactly at the end of a deal, the game still ends, but that player's score is converted to +1000.
-There is no option to expose cards to double their score.
-In rec.games.playing-cards, jp described a variation played by Chinese students at CU Boulder. They called it "Catch the Pig". They played as in the main account except that you could double the value of the key cards (pig, sheep, ten of clubs or ace of hearts for hearts) by putting them "up for sale" face down, or quadruple their value by putting them face up.
-
-Jun Qian has contributed the following variations:
-
-Some play that if you are dealt an exposable card as the first card of your hand and you expose it before seeing your other cards, the effect is doubled. For example a pig exposed as your first card is worth -400, and a club ten exposed as your first card multiplies the value of all the scoring cards taken by the player who wins it by eight.
-Some play that if you expose the sheep it becomes a negative card, worth -200, or in some circles -400.
-Some play that if you take all the hearts, the pig and the sheep, all these cards become positive. This is called Zhu Yang Man Juan (catch pig and sheep in hand). If you take all the hearts and the pig, but not the sheep, the pig remains negative.

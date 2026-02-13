@@ -53,8 +53,9 @@ class Deck {
 }
 
 class GongZhuGame {
-    constructor(roomId) {
+    constructor(roomId, targetScore = -500) {
         this.roomId = roomId;
+        this.targetScore = targetScore;
         this.players = [];
         this.deck = new Deck();
         this.hands = {};
@@ -88,10 +89,10 @@ class GongZhuGame {
 
     startGame() {
         if (this.players.length !== 4) return false;
-        
+
         this.deck.reset();
         this.deck.shuffle();
-        
+
         const dealtHands = this.deck.deal(4);
         this.players.forEach((player, index) => {
             this.hands[player.id] = dealtHands[index];
@@ -135,7 +136,7 @@ class GongZhuGame {
 
         // Must follow suit if possible
         const suitCards = hand.filter(c => c.suit === this.leadSuit);
-        
+
         if (suitCards.length > 0) {
             return suitCards;
         }
@@ -166,12 +167,12 @@ class GongZhuGame {
 
         // Play the card
         hand.splice(cardIndex, 1);
-        
+
         // Clear last completed trick when starting a new trick
         if (this.currentTrick.length === 0) {
             this.lastCompletedTrick = [];
         }
-        
+
         this.currentTrick.push({ playerId, card });
 
         // Track lead suit
@@ -187,10 +188,10 @@ class GongZhuGame {
         // Move to next player (anticlockwise)
         this.currentPlayerIndex = (this.currentPlayerIndex + 3) % 4; // -1 mod 4 = +3 mod 4
 
-        return { 
-            success: true, 
-            trickComplete: false, 
-            nextPlayer: this.players[this.currentPlayerIndex].id 
+        return {
+            success: true,
+            trickComplete: false,
+            nextPlayer: this.players[this.currentPlayerIndex].id
         };
     }
 
@@ -198,14 +199,14 @@ class GongZhuGame {
         // Find winner (highest card of lead suit)
         let winningPlay = this.currentTrick[0];
         for (const play of this.currentTrick) {
-            if (play.card.suit === this.leadSuit && 
+            if (play.card.suit === this.leadSuit &&
                 play.card.getValue() > winningPlay.card.getValue()) {
                 winningPlay = play;
             }
         }
 
         const winnerId = winningPlay.playerId;
-        
+
         // Add scoring cards to winner's taken tricks
         for (const play of this.currentTrick) {
             if (this.isScoringCard(play.card)) {
@@ -264,11 +265,11 @@ class GongZhuGame {
     // Calculate current round scores from tricksTaken (for live updates)
     getCurrentRoundScores() {
         const roundScores = {};
-        
+
         for (const player of this.players) {
             roundScores[player.id] = this.calculatePlayerScore(this.tricksTaken[player.id]);
         }
-        
+
         return roundScores;
     }
 
@@ -277,15 +278,15 @@ class GongZhuGame {
         // Check if player took all hearts (all 13 hearts required)
         const heartsTaken = taken.filter(c => c.suit === 'hearts');
         const hasAllHearts = heartsTaken.length === 13;
-        
+
         // Check for special cards
         const hasPig = taken.some(c => c.suit === 'spades' && c.rank === 'Q');
         const hasSheep = taken.some(c => c.suit === 'diamonds' && c.rank === 'J');
         const hasClubTen = taken.some(c => c.suit === 'clubs' && c.rank === '10');
-        
+
         // Calculate base score (before 10 of clubs effect)
         let baseScore = 0;
-        
+
         // Calculate hearts score
         if (hasAllHearts) {
             // All hearts taken: +200 instead of -200
@@ -304,22 +305,22 @@ class GongZhuGame {
                 baseScore -= 100;
             }
         }
-        
+
         // Sheep bonus (always +100, even with all hearts)
         if (hasSheep) {
             baseScore += 100;
         }
-        
+
         // Club ten effect
         // The 10 of clubs has special rules:
         // - If NO other scoring cards taken: +50
         // - If other scoring cards taken: doubles all other scoring cards, but 10 of clubs itself is worth 0
         // Note: Hearts 4, 3, 2 ARE scoring cards even though they score 0
         if (hasClubTen) {
-            const otherScoringCards = taken.filter(c => 
+            const otherScoringCards = taken.filter(c =>
                 this.isScoringCard(c) && !(c.suit === 'clubs' && c.rank === '10')
             );
-            
+
             if (otherScoringCards.length === 0) {
                 // No other scoring cards - club ten is worth +50
                 return baseScore + 50;
@@ -328,49 +329,46 @@ class GongZhuGame {
                 return baseScore * 2;
             }
         }
-        
+
         return baseScore;
     }
 
     calculateRoundScores() {
         const roundScores = {};
-        
+
         for (const player of this.players) {
             const score = this.calculatePlayerScore(this.tricksTaken[player.id]);
             roundScores[player.id] = score;
             this.scores[player.id] += score;
         }
-        
+
         return roundScores;
     }
 
     getHeartValue(card) {
         if (card.suit !== 'hearts') return 0;
-        
+
         switch (card.rank) {
             case 'A': return -50;
             case 'K': return -40;
             case 'Q': return -30;
             case 'J': return -20;
-            case '10':
-            case '9':
-            case '8':
-            case '7':
-            case '6':
-            case '5':
-                return -10;
-            case '4':
-            case '3':
-            case '2':
-                return 0;
-            default:
-                return 0;
+            case '10': return -10;
+            case '9': return -9;
+            case '8': return -8;
+            case '7': return -7;
+            case '6': return -6;
+            case '5': return -5;
+            case '4': return -4;
+            case '3': return -3;
+            case '2': return -2;
+            default: return 0;
         }
     }
 
     checkGameOver() {
         for (const player of this.players) {
-            if (this.scores[player.id] <= -1000) {
+            if (this.scores[player.id] <= this.targetScore) {
                 return {
                     gameOver: true,
                     loser: player.id
@@ -388,7 +386,7 @@ class GongZhuGame {
     getGameState(forPlayerId = null) {
         // Get current round scores for live updates
         const currentRoundScores = this.gamePhase === 'playing' ? this.getCurrentRoundScores() : {};
-        
+
         const state = {
             roomId: this.roomId,
             players: this.players.map(p => ({
@@ -413,7 +411,7 @@ class GongZhuGame {
         // Only send hand to the requesting player
         if (forPlayerId && this.hands[forPlayerId]) {
             state.hand = this.hands[forPlayerId];
-            state.validCards = this.gamePhase === 'playing' && 
+            state.validCards = this.gamePhase === 'playing' &&
                 this.players[this.currentPlayerIndex]?.id === forPlayerId
                 ? this.getValidCards(forPlayerId)
                 : [];

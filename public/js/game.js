@@ -26,6 +26,7 @@ class GongZhuClient {
         this.avatarPicker = document.getElementById('avatar-picker');
         this.joinRoomForm = document.getElementById('join-room-form');
         this.roomCodeInput = document.getElementById('room-code');
+        this.targetScoreInput = document.getElementById('target-score');
 
         // Lobby elements
         this.displayRoomCode = document.getElementById('display-room-code');
@@ -44,6 +45,10 @@ class GongZhuClient {
         this.roundModal = document.getElementById('round-modal');
         this.gameoverModal = document.getElementById('gameover-modal');
         this.rulesModal = document.getElementById('rules-modal');
+
+        // Emotion Elements
+        this.emotionPicker = document.getElementById('emotion-picker');
+        this.btnEmotionToggle = document.getElementById('btn-emotion-toggle');
     }
 
     setupEventListeners() {
@@ -70,6 +75,27 @@ class GongZhuClient {
         document.getElementById('btn-next-round').addEventListener('click', () => this.nextRound());
         document.getElementById('btn-new-game').addEventListener('click', () => this.newGame());
         document.getElementById('btn-back-menu').addEventListener('click', () => this.backToMenu());
+
+        // Emotion buttons
+        this.btnEmotionToggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.toggleEmotionPicker();
+        });
+
+        this.emotionPicker.querySelectorAll('.emotion-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                const emotion = e.target.dataset.emotion || e.target.textContent;
+                this.sendEmotion(emotion);
+                this.toggleEmotionPicker(false);
+            });
+        });
+
+        // Close emotion picker when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!this.emotionPicker.contains(e.target) && e.target !== this.btnEmotionToggle) {
+                this.toggleEmotionPicker(false);
+            }
+        });
     }
 
     setupSocketListeners() {
@@ -86,6 +112,7 @@ class GongZhuClient {
         this.socket.on('roundOver', (data) => this.onRoundOver(data));
         this.socket.on('newRoundStarted', () => this.onNewRoundStarted());
         this.socket.on('playerReplacedByBot', (data) => this.onPlayerReplacedByBot(data));
+        this.socket.on('playerEmotion', (data) => this.onPlayerEmotion(data));
         this.socket.on('error', (data) => this.onError(data));
     }
 
@@ -135,7 +162,8 @@ class GongZhuClient {
         this.playerName = this.playerNameInput.value.trim() || 'Player';
         this.socket.emit('createRoom', {
             name: this.playerName,
-            avatar: this.playerAvatar
+            avatar: this.playerAvatar,
+            targetScore: this.targetScoreInput.value
         });
     }
 
@@ -218,7 +246,7 @@ class GongZhuClient {
 
     onGameState(state) {
         this.gameState = state;
-        
+
         if (state.gamePhase === 'waiting') {
             this.updateLobbyPlayers();
         } else {
@@ -352,18 +380,18 @@ class GongZhuClient {
         // Update player info
         document.getElementById('my-name').textContent = this.playerName;
         document.getElementById('my-avatar').textContent = this.playerAvatar;
-        
+
         const myPlayer = this.gameState.players.find(p => p.id === this.playerId);
         if (myPlayer) {
             const myScoreEl = document.getElementById('my-score');
             // Show total score and round score separately
             const roundScoreText = myPlayer.roundScore !== 0 ? ` (Round: ${myPlayer.roundScore >= 0 ? '+' : ''}${myPlayer.roundScore})` : '';
             myScoreEl.textContent = `Score: ${myPlayer.score}${roundScoreText}`;
-            
+
             // Color based on round score if active, otherwise total score
             const scoreForColor = myPlayer.roundScore !== 0 ? myPlayer.roundScore : myPlayer.score;
             myScoreEl.className = 'player-score ' + (scoreForColor >= 0 ? 'positive' : 'negative');
-            
+
             // Render my taken cards
             this.renderMiniCards('my-taken-cards', myPlayer.tricksTaken || []);
         }
@@ -383,12 +411,12 @@ class GongZhuClient {
                 // Update info
                 element.querySelector('.player-avatar').textContent = opponent.avatar || '🤖';
                 element.querySelector('.player-name').textContent = opponent.name + (opponent.isBot ? ' 🤖' : '');
-                
+
                 // Update score with round score
                 const scoreEl = element.querySelector('.player-score');
                 const roundScoreText = opponent.roundScore !== 0 ? ` (Round: ${opponent.roundScore >= 0 ? '+' : ''}${opponent.roundScore})` : '';
                 scoreEl.textContent = `Score: ${opponent.score}${roundScoreText}`;
-                
+
                 // Color based on round score if active, otherwise total score
                 const scoreForColor = opponent.roundScore !== 0 ? opponent.roundScore : opponent.score;
                 scoreEl.className = 'player-score ' + (scoreForColor >= 0 ? 'positive' : 'negative');
@@ -431,7 +459,7 @@ class GongZhuClient {
         if (trick.length === 0 && this.gameState.lastCompletedTrick && this.gameState.lastCompletedTrick.length > 0) {
             trick = this.gameState.lastCompletedTrick;
         }
-        
+
         const myIndex = this.gameState.players.findIndex(p => p.id === this.playerId);
         const positions = ['from-bottom', 'from-right', 'from-top', 'from-left'];
 
@@ -492,7 +520,7 @@ class GongZhuClient {
                 const position = positions[relativePos - 1];
                 document.getElementById(`opponent-${position}`).classList.add('current-turn');
             }
-            
+
             const currentPlayer = this.gameState.players.find(p => p.id === currentPlayerId);
             this.gameMessage.textContent = `${currentPlayer?.name || 'Player'}'s turn`;
         }
@@ -584,7 +612,7 @@ class GongZhuClient {
 
         let scoresHtml = '<h3>Final Standings</h3>';
         const sortedPlayers = [...this.gameState.players].sort((a, b) => b.score - a.score);
-        
+
         sortedPlayers.forEach((player, index) => {
             const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '💀';
             const isMe = player.id === this.playerId;
@@ -599,7 +627,7 @@ class GongZhuClient {
         });
 
         document.getElementById('final-scores').innerHTML = scoresHtml;
-        
+
         // Show/hide new game button based on host status
         document.getElementById('btn-new-game').style.display = this.isHost ? 'inline-block' : 'none';
         this.gameoverModal.classList.add('active');
@@ -616,6 +644,70 @@ class GongZhuClient {
 
     backToMenu() {
         window.location.reload();
+    }
+
+    // Emotion Logic
+    toggleEmotionPicker(show = null) {
+        if (show === null) {
+            this.emotionPicker.classList.toggle('active');
+        } else if (show) {
+            this.emotionPicker.classList.add('active');
+        } else {
+            this.emotionPicker.classList.remove('active');
+        }
+    }
+
+    sendEmotion(emotion) {
+        this.socket.emit('sendEmotion', emotion);
+    }
+
+    onPlayerEmotion(data) {
+        const { playerId, emotion } = data;
+        let targetElement;
+
+        if (playerId === this.playerId) {
+            targetElement = document.getElementById('my-avatar');
+        } else {
+            const position = this.getPlayerPosition(playerId);
+            const opponentArea = document.getElementById(`opponent-${position}`);
+            if (opponentArea) {
+                targetElement = opponentArea.querySelector('.player-avatar');
+            }
+        }
+
+        if (targetElement) {
+            this.showFloatingEmotion(targetElement, emotion);
+        }
+    }
+
+    showFloatingEmotion(targetElement, emotion) {
+        const floatingEl = document.createElement('div');
+        floatingEl.className = 'floating-emotion';
+        floatingEl.textContent = emotion;
+
+        // Position relative to the target avatar
+        const rect = targetElement.getBoundingClientRect();
+
+        // We need to account for the fact that floating-emotion is absolute positioned in the body/screen
+        // or effectively relative to the parent if we append it there.
+        // Let's append to the targetElement's parent to keep it simple, 
+        // assuming parent has position: relative (player-info does not, but we can append to document.body and use absolute coords)
+
+        // Append to body and use fixed/absolute positioning
+        document.body.appendChild(floatingEl);
+
+        const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
+        const scrollY = window.pageYOffset || document.documentElement.scrollTop;
+
+        floatingEl.style.left = (rect.left + rect.width / 2 - 20) + scrollX + 'px'; // Center horizontally
+        floatingEl.style.top = (rect.top) + scrollY + 'px'; // Start at top of avatar
+
+        // Remove after animation
+        setTimeout(() => {
+            if (floatingEl.parentNode) {
+                floatingEl.parentNode.removeChild(floatingEl);
+            }
+        }, 3000);
     }
 }
 

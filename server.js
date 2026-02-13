@@ -49,20 +49,20 @@ async function handleBotTurn(roomId) {
 
     const validCards = room.game.getValidCards(currentPlayer.id);
     const bot = currentPlayer;
-    
+
     const gameState = {
         currentTrick: room.game.currentTrick,
         leadSuit: room.game.leadSuit,
         tricksTaken: room.game.tricksTaken
     };
 
-    const chosenCard = bot.chooseCard ? 
-        bot.chooseCard(validCards, gameState) : 
+    const chosenCard = bot.chooseCard ?
+        bot.chooseCard(validCards, gameState) :
         validCards[Math.floor(Math.random() * validCards.length)];
 
     if (chosenCard) {
         const result = room.game.playCard(currentPlayer.id, chosenCard.id);
-        
+
         io.to(roomId).emit('cardPlayed', {
             playerId: currentPlayer.id,
             card: chosenCard,
@@ -73,7 +73,7 @@ async function handleBotTurn(roomId) {
 
         if (result.trickComplete) {
             await new Promise(resolve => setTimeout(resolve, 1500));
-            
+
             io.to(roomId).emit('trickComplete', {
                 winner: result.trickWinner,
                 cards: result.trickCards
@@ -100,7 +100,7 @@ io.on('connection', (socket) => {
     socket.on('createRoom', (playerData) => {
         const roomId = uuidv4().substring(0, 6).toUpperCase();
         const playerId = uuidv4();
-        
+
         const player = {
             id: playerId,
             socketId: socket.id,
@@ -110,7 +110,10 @@ io.on('connection', (socket) => {
             isHost: true
         };
 
-        const game = new GongZhuGame(roomId);
+
+
+        const targetScore = parseInt(playerData.targetScore) || -500;
+        const game = new GongZhuGame(roomId, targetScore);
         game.addPlayer(player);
 
         rooms.set(roomId, { game, hostId: playerId });
@@ -153,7 +156,7 @@ io.on('connection', (socket) => {
 
         socket.join(roomId);
         socket.emit('roomJoined', { roomId, playerId, gameState: room.game.getGameState(playerId) });
-        
+
         // Notify others
         socket.to(roomId).emit('playerJoined', { player });
         broadcastGameState(roomId);
@@ -244,7 +247,7 @@ io.on('connection', (socket) => {
         const card = hand?.find(c => c.id === cardId);
 
         const result = room.game.playCard(playerRoom.playerId, cardId);
-        
+
         if (result.success) {
             io.to(playerRoom.roomId).emit('cardPlayed', {
                 playerId: playerRoom.playerId,
@@ -317,16 +320,16 @@ io.on('connection', (socket) => {
     // Handle disconnect
     socket.on('disconnect', () => {
         console.log(`Player disconnected: ${socket.id}`);
-        
+
         const playerRoom = playerRooms.get(socket.id);
         if (playerRoom) {
             const room = rooms.get(playerRoom.roomId);
             if (room) {
                 const player = room.game.players.find(p => p.id === playerRoom.playerId);
-                
+
                 if (room.game.gamePhase === 'waiting') {
                     room.game.removePlayer(playerRoom.playerId);
-                    
+
                     if (room.game.players.length === 0) {
                         rooms.delete(playerRoom.roomId);
                     } else {
@@ -347,7 +350,7 @@ io.on('connection', (socket) => {
                         const bot = createBot(player.id);
                         bot.name = `${player.name} (Bot)`;
                         Object.assign(player, bot);
-                        
+
                         io.to(playerRoom.roomId).emit('playerReplacedByBot', { playerId: player.id });
                         broadcastGameState(playerRoom.roomId);
                         handleBotTurn(playerRoom.roomId);
@@ -356,6 +359,19 @@ io.on('connection', (socket) => {
             }
             playerRooms.delete(socket.id);
         }
+    });
+
+
+    // Handle emotion/reaction
+    socket.on('sendEmotion', (emotion) => {
+        const playerRoom = playerRooms.get(socket.id);
+        if (!playerRoom) return;
+
+        // Broadcast to all players in the room, including sender (to confirm/show)
+        io.to(playerRoom.roomId).emit('playerEmotion', {
+            playerId: playerRoom.playerId,
+            emotion: emotion
+        });
     });
 });
 

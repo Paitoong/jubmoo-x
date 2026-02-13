@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>JubMoo - Chase the Pig</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
+
 <body>
     <div id="app">
         <!-- Main Menu Screen -->
@@ -14,34 +16,35 @@
                 <div class="game-logo">
                     <svg viewBox="0 0 120 120" class="pig-logo">
                         <!-- Pig face -->
-                        <ellipse cx="60" cy="60" rx="50" ry="45" fill="#FFB6C1"/>
+                        <ellipse cx="60" cy="60" rx="50" ry="45" fill="#FFB6C1" />
                         <!-- Ears -->
-                        <ellipse cx="25" cy="25" rx="15" ry="20" fill="#FF69B4" transform="rotate(-20 25 25)"/>
-                        <ellipse cx="95" cy="25" rx="15" ry="20" fill="#FF69B4" transform="rotate(20 95 25)"/>
-                        <ellipse cx="25" cy="25" rx="10" ry="14" fill="#FFB6C1" transform="rotate(-20 25 25)"/>
-                        <ellipse cx="95" cy="25" rx="10" ry="14" fill="#FFB6C1" transform="rotate(20 95 25)"/>
+                        <ellipse cx="25" cy="25" rx="15" ry="20" fill="#FF69B4" transform="rotate(-20 25 25)" />
+                        <ellipse cx="95" cy="25" rx="15" ry="20" fill="#FF69B4" transform="rotate(20 95 25)" />
+                        <ellipse cx="25" cy="25" rx="10" ry="14" fill="#FFB6C1" transform="rotate(-20 25 25)" />
+                        <ellipse cx="95" cy="25" rx="10" ry="14" fill="#FFB6C1" transform="rotate(20 95 25)" />
                         <!-- Snout -->
-                        <ellipse cx="60" cy="70" rx="22" ry="16" fill="#FF69B4"/>
+                        <ellipse cx="60" cy="70" rx="22" ry="16" fill="#FF69B4" />
                         <!-- Nostrils -->
-                        <ellipse cx="52" cy="70" rx="5" ry="6" fill="#DB7093"/>
-                        <ellipse cx="68" cy="70" rx="5" ry="6" fill="#DB7093"/>
+                        <ellipse cx="52" cy="70" rx="5" ry="6" fill="#DB7093" />
+                        <ellipse cx="68" cy="70" rx="5" ry="6" fill="#DB7093" />
                         <!-- Eyes -->
-                        <circle cx="40" cy="45" r="10" fill="white"/>
-                        <circle cx="80" cy="45" r="10" fill="white"/>
-                        <circle cx="42" cy="45" r="6" fill="#2c3e50"/>
-                        <circle cx="82" cy="45" r="6" fill="#2c3e50"/>
-                        <circle cx="44" cy="43" r="2" fill="white"/>
-                        <circle cx="84" cy="43" r="2" fill="white"/>
+                        <circle cx="40" cy="45" r="10" fill="white" />
+                        <circle cx="80" cy="45" r="10" fill="white" />
+                        <circle cx="42" cy="45" r="6" fill="#2c3e50" />
+                        <circle cx="82" cy="45" r="6" fill="#2c3e50" />
+                        <circle cx="44" cy="43" r="2" fill="white" />
+                        <circle cx="84" cy="43" r="2" fill="white" />
                         <!-- Blush -->
-                        <ellipse cx="25" cy="55" rx="10" ry="6" fill="#FF69B4" opacity="0.5"/>
-                        <ellipse cx="95" cy="55" rx="10" ry="6" fill="#FF69B4" opacity="0.5"/>
+                        <ellipse cx="25" cy="55" rx="10" ry="6" fill="#FF69B4" opacity="0.5" />
+                        <ellipse cx="95" cy="55" rx="10" ry="6" fill="#FF69B4" opacity="0.5" />
                         <!-- Cute smile -->
-                        <path d="M 45 85 Q 60 95 75 85" stroke="#DB7093" stroke-width="3" fill="none" stroke-linecap="round"/>
+                        <path d="M 45 85 Q 60 95 75 85" stroke="#DB7093" stroke-width="3" fill="none"
+                            stroke-linecap="round" />
                     </svg>
                 </div>
                 <h1 class="game-title">JubMoo</h1>
                 <h2 class="game-subtitle">Chase the Pig</h2>
-                
+
                 <div class="player-setup">
                     <h3>Player Setup</h3>
                     <div class="input-group">
@@ -66,8 +69,17 @@
                         </div>
                     </div>
                 </div>
+                <div class="input-group">
+                    <label for="target-score">Target Score</label>
+                    <select id="target-score"
+                        style="width: 100%; padding: 12px; border-radius: 8px; border: 2px solid transparent; background: rgba(255, 255, 255, 0.9);">
+                        <option value="-200">-200 (Short Game)</option>
+                        <option value="-500" selected>-500 (Standard)</option>
+                        <option value="-1000">-1000 (Long Game)</option>
+                    </select>
+                </div>
 
-                <div class="menu-buttons">
+                <div class="menu-buttons" style="margin-top: 20px;">
                     <button class="btn btn-primary" id="btn-create-room">Create Room</button>
                     <button class="btn btn-secondary" id="btn-join-room">Join Room</button>
                     <button class="btn btn-info" id="btn-how-to-play">How to Play</button>
@@ -83,164 +95,187 @@
                 </div>
             </div>
         </div>
+    </div>
+    </div>
 
-        <!-- Lobby Screen -->
-        <div id="lobby-screen" class="screen">
-            <div class="lobby-container">
-                <h2>Game Lobby</h2>
-                <div class="room-info">
-                    <span>Room Code: </span>
-                    <span class="room-code" id="display-room-code">------</span>
-                    <button class="btn-copy" id="btn-copy-code" title="Copy code">📋</button>
-                </div>
+    <!-- Lobby Screen -->
+    <div id="lobby-screen" class="screen">
+        <div class="lobby-container">
+            <h2>Game Lobby</h2>
+            <div class="room-info">
+                <span>Room Code: </span>
+                <span class="room-code" id="display-room-code">------</span>
+                <button class="btn-copy" id="btn-copy-code" title="Copy code">📋</button>
+            </div>
 
-                <div class="players-list" id="players-list">
-                    <!-- Players will be added here dynamically -->
-                </div>
+            <div class="players-list" id="players-list">
+                <!-- Players will be added here dynamically -->
+            </div>
 
-                <div class="lobby-actions" id="host-actions">
-                    <button class="btn btn-secondary" id="btn-add-bot">+ Add Bot</button>
-                    <button class="btn btn-primary" id="btn-start-game" disabled>Start Game</button>
-                </div>
-                
-                <div class="waiting-message" id="waiting-message">
-                    Waiting for host to start the game...
-                </div>
+            <div class="lobby-actions" id="host-actions">
+                <button class="btn btn-secondary" id="btn-add-bot">+ Add Bot</button>
+                <button class="btn btn-primary" id="btn-start-game" disabled>Start Game</button>
+            </div>
 
-                <button class="btn btn-danger" id="btn-leave-room">Leave Room</button>
+            <div class="waiting-message" id="waiting-message">
+                Waiting for host to start the game...
+            </div>
+
+            <button class="btn btn-danger" id="btn-leave-room">Leave Room</button>
+        </div>
+    </div>
+
+    <!-- Game Screen -->
+    <div id="game-screen" class="screen">
+        <div class="game-container">
+            <!-- Opponent areas -->
+            <div class="opponent-area opponent-top" id="opponent-top">
+                <div class="player-info">
+                    <span class="player-avatar">🤖</span>
+                    <span class="player-name">Player 3</span>
+                    <span class="player-score">Score: 0</span>
+                </div>
+                <div class="opponent-cards"></div>
+                <div class="taken-cards"></div>
+            </div>
+
+            <div class="opponent-area opponent-left" id="opponent-left">
+                <div class="player-info">
+                    <span class="player-avatar">🤖</span>
+                    <span class="player-name">Player 2</span>
+                    <span class="player-score">Score: 0</span>
+                </div>
+                <div class="opponent-cards"></div>
+                <div class="taken-cards"></div>
+            </div>
+
+            <div class="opponent-area opponent-right" id="opponent-right">
+                <div class="player-info">
+                    <span class="player-avatar">🤖</span>
+                    <span class="player-name">Player 4</span>
+                    <span class="player-score">Score: 0</span>
+                </div>
+                <div class="opponent-cards"></div>
+                <div class="taken-cards"></div>
+            </div>
+
+            <!-- Center play area -->
+            <div class="play-area" id="play-area">
+                <div class="trick-cards" id="trick-cards">
+                    <!-- Cards played in current trick -->
+                </div>
+                <div class="game-message" id="game-message"></div>
+            </div>
+
+            <!-- Player's area -->
+            <div class="player-area" id="player-area">
+                <div class="player-info">
+                    <span class="player-avatar" id="my-avatar">😀</span>
+                    <span class="player-name" id="my-name">You</span>
+                    <span class="player-score" id="my-score">Score: 0</span>
+                </div>
+                <div class="my-taken-cards" id="my-taken-cards"></div>
+                <div class="hand-cards" id="hand-cards">
+                    <!-- Player's hand -->
+                </div>
+            </div>
+
+            <!-- Scoreboard -->
+            <div class="scoreboard" id="scoreboard">
+                <h4>Scores</h4>
+                <div class="score-list" id="score-list"></div>
             </div>
         </div>
 
-        <!-- Game Screen -->
-        <div id="game-screen" class="screen">
-            <div class="game-container">
-                <!-- Opponent areas -->
-                <div class="opponent-area opponent-top" id="opponent-top">
-                    <div class="player-info">
-                        <span class="player-avatar">🤖</span>
-                        <span class="player-name">Player 3</span>
-                        <span class="player-score">Score: 0</span>
-                    </div>
-                    <div class="opponent-cards"></div>
-                    <div class="taken-cards"></div>
-                </div>
-
-                <div class="opponent-area opponent-left" id="opponent-left">
-                    <div class="player-info">
-                        <span class="player-avatar">🤖</span>
-                        <span class="player-name">Player 2</span>
-                        <span class="player-score">Score: 0</span>
-                    </div>
-                    <div class="opponent-cards"></div>
-                    <div class="taken-cards"></div>
-                </div>
-
-                <div class="opponent-area opponent-right" id="opponent-right">
-                    <div class="player-info">
-                        <span class="player-avatar">🤖</span>
-                        <span class="player-name">Player 4</span>
-                        <span class="player-score">Score: 0</span>
-                    </div>
-                    <div class="opponent-cards"></div>
-                    <div class="taken-cards"></div>
-                </div>
-
-                <!-- Center play area -->
-                <div class="play-area" id="play-area">
-                    <div class="trick-cards" id="trick-cards">
-                        <!-- Cards played in current trick -->
-                    </div>
-                    <div class="game-message" id="game-message"></div>
-                </div>
-
-                <!-- Player's area -->
-                <div class="player-area" id="player-area">
-                    <div class="player-info">
-                        <span class="player-avatar" id="my-avatar">😀</span>
-                        <span class="player-name" id="my-name">You</span>
-                        <span class="player-score" id="my-score">Score: 0</span>
-                    </div>
-                    <div class="my-taken-cards" id="my-taken-cards"></div>
-                    <div class="hand-cards" id="hand-cards">
-                        <!-- Player's hand -->
-                    </div>
-                </div>
-
-                <!-- Scoreboard -->
-                <div class="scoreboard" id="scoreboard">
-                    <h4>Scores</h4>
-                    <div class="score-list" id="score-list"></div>
-                </div>
+        <!-- Emotion UI -->
+        <div class="emotion-container" id="emotion-container">
+            <button class="btn-emotion-toggle" id="btn-emotion-toggle">😀</button>
+            <div class="emotion-picker" id="emotion-picker">
+                <div class="emotion-item" data-emotion="😀">😀</div>
+                <div class="emotion-item" data-emotion="😂">😂</div>
+                <div class="emotion-item" data-emotion="😍">😍</div>
+                <div class="emotion-item" data-emotion="😎">😎</div>
+                <div class="emotion-item" data-emotion="🤔">🤔</div>
+                <div class="emotion-item" data-emotion="😭">😭</div>
+                <div class="emotion-item" data-emotion="😡">😡</div>
+                <div class="emotion-item" data-emotion="😴">😴</div>
+                <div class="emotion-item" data-emotion="👍">👍</div>
+                <div class="emotion-item" data-emotion="👎">👎</div>
+                <div class="emotion-item" data-emotion="🐷">🐷</div>
+                <div class="emotion-item" data-emotion="👻">👻</div>
             </div>
         </div>
+    </div>
 
-        <!-- Round End Modal -->
-        <div id="round-modal" class="modal">
-            <div class="modal-content">
-                <h2>Round Complete!</h2>
-                <div class="round-scores" id="round-scores"></div>
-                <div class="total-scores" id="total-scores"></div>
-                <button class="btn btn-primary" id="btn-next-round">Next Round</button>
+    <!-- Round End Modal -->
+    <div id="round-modal" class="modal">
+        <div class="modal-content">
+            <h2>Round Complete!</h2>
+            <div class="round-scores" id="round-scores"></div>
+            <div class="total-scores" id="total-scores"></div>
+            <button class="btn btn-primary" id="btn-next-round">Next Round</button>
+        </div>
+    </div>
+
+    <!-- Game Over Modal -->
+    <div id="gameover-modal" class="modal">
+        <div class="modal-content">
+            <h2>🐷 Game Over! 🐷</h2>
+            <div class="game-result" id="game-result"></div>
+            <div class="final-scores" id="final-scores"></div>
+            <button class="btn btn-primary" id="btn-new-game">New Game</button>
+            <button class="btn btn-secondary" id="btn-back-menu">Back to Menu</button>
+        </div>
+    </div>
+
+    <!-- How to Play Modal -->
+    <div id="rules-modal" class="modal">
+        <div class="modal-content rules-content">
+            <h2>How to Play JubMoo</h2>
+            <button class="modal-close" id="btn-close-rules">&times;</button>
+
+            <div class="rules-section">
+                <h3>🎯 Objective</h3>
+                <p>Avoid taking penalty cards (hearts and the Queen of Spades) while trying to collect bonus cards (Jack
+                    of Diamonds and 10 of Clubs).</p>
+            </div>
+
+            <div class="rules-section">
+                <h3>📋 Card Values</h3>
+                <ul>
+                    <li>♠Q (Pig): <strong>-100</strong></li>
+                    <li>♥A: -50, ♥K: -40, ♥Q: -30, ♥J: -20</li>
+                    <li>♥10,9,8,7,6,5: -10 each</li>
+                    <li>♥4,3,2: 0 (but still count as scoring cards)</li>
+                    <li>♦J (Sheep): <strong>+100</strong></li>
+                    <li>♣10: +50 alone, or doubles all scoring cards</li>
+                </ul>
+            </div>
+
+            <div class="rules-section">
+                <h3> Gameplay</h3>
+                <ul>
+                    <li>Play is anticlockwise</li>
+                    <li>First hand: 2♠ holder leads</li>
+                    <li>Must follow suit if possible</li>
+                    <li>Highest card of led suit wins</li>
+                </ul>
+            </div>
+
+            <div class="rules-section">
+                <h3>🏆 Special Rules</h3>
+                <ul>
+                    <li>Taking ALL hearts: +200 instead of -200</li>
+                    <li>All hearts + Pig: Pig becomes +100</li>
+                    <li>Game ends when someone reaches -1000</li>
+                </ul>
             </div>
         </div>
-
-        <!-- Game Over Modal -->
-        <div id="gameover-modal" class="modal">
-            <div class="modal-content">
-                <h2>🐷 Game Over! 🐷</h2>
-                <div class="game-result" id="game-result"></div>
-                <div class="final-scores" id="final-scores"></div>
-                <button class="btn btn-primary" id="btn-new-game">New Game</button>
-                <button class="btn btn-secondary" id="btn-back-menu">Back to Menu</button>
-            </div>
-        </div>
-
-        <!-- How to Play Modal -->
-        <div id="rules-modal" class="modal">
-            <div class="modal-content rules-content">
-                <h2>How to Play JubMoo</h2>
-                <button class="modal-close" id="btn-close-rules">&times;</button>
-                
-                <div class="rules-section">
-                    <h3>🎯 Objective</h3>
-                    <p>Avoid taking penalty cards (hearts and the Queen of Spades) while trying to collect bonus cards (Jack of Diamonds and 10 of Clubs).</p>
-                </div>
-
-                <div class="rules-section">
-                    <h3>📋 Card Values</h3>
-                    <ul>
-                        <li>♠Q (Pig): <strong>-100</strong></li>
-                        <li>♥A: -50, ♥K: -40, ♥Q: -30, ♥J: -20</li>
-                        <li>♥10,9,8,7,6,5: -10 each</li>
-                        <li>♥4,3,2: 0 (but still count as scoring cards)</li>
-                        <li>♦J (Sheep): <strong>+100</strong></li>
-                        <li>♣10: +50 alone, or doubles all scoring cards</li>
-                    </ul>
-                </div>
-
-                <div class="rules-section">
-                    <h3> Gameplay</h3>
-                    <ul>
-                        <li>Play is anticlockwise</li>
-                        <li>First hand: 2♠ holder leads</li>
-                        <li>Must follow suit if possible</li>
-                        <li>Highest card of led suit wins</li>
-                    </ul>
-                </div>
-
-                <div class="rules-section">
-                    <h3>🏆 Special Rules</h3>
-                    <ul>
-                        <li>Taking ALL hearts: +200 instead of -200</li>
-                        <li>All hearts + Pig: Pig becomes +100</li>
-                        <li>Game ends when someone reaches -1000</li>
-                    </ul>
-                </div>
-            </div>
-        </div>
+    </div>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script src="js/game.js"></script>
 </body>
+
 </html>
