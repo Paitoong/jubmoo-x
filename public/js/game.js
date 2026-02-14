@@ -19,7 +19,8 @@ class GongZhuClient {
             jackDiamond: new Audio('sound/jack-daimond.wav'),
             queenSpade: new Audio('sound/queen-spade.wav'),
             gameOver: new Audio('sound/game-over.wav'),
-            cardPlacement: new Audio('sound/card-placement.wav')
+            cardPlacement: new Audio('sound/card-placement.wav'),
+            endRound: new Audio('sound/end_round.wav')
         };
         // Preload sounds
         Object.values(this.sounds).forEach(s => s.load());
@@ -636,6 +637,7 @@ class GongZhuClient {
     }
 
     onRoundOver(data) {
+        this.playSound('endRound');
         this.showRoundModal(data.scores, data.gameOver);
     }
 

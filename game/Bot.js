@@ -356,6 +356,72 @@ class Bot {
         return (myHearts + heartsInHand >= 8);
     }
 
+    // ─── Grand Slam detection (+1000 for all hearts + pig + sheep + club ten) ───
+    canAttemptGrandSlam(hand, tricksTaken, botId) {
+        // First, must be able to sweep all hearts
+        if (!this.canAttemptHeartsSweep(hand, tricksTaken, botId)) return false;
+
+        const myTaken = tricksTaken[botId] || [];
+
+        // Check pig (Q♠): must hold it or have taken it; must not be taken by opponent
+        const hasPig = hand.some(c => this.isPig(c)) || myTaken.some(c => this.isPig(c));
+        const pigTakenByOther = Object.entries(tricksTaken).some(
+            ([pid, cards]) => pid !== botId && cards.some(c => this.isPig(c))
+        );
+        if (!hasPig && pigTakenByOther) return false;
+
+        // Check sheep (J♦): must hold it or have taken it; must not be taken by opponent
+        const hasSheep = hand.some(c => this.isSheep(c)) || myTaken.some(c => this.isSheep(c));
+        const sheepTakenByOther = Object.entries(tricksTaken).some(
+            ([pid, cards]) => pid !== botId && cards.some(c => this.isSheep(c))
+        );
+        if (!hasSheep && sheepTakenByOther) return false;
+
+        // Check club ten (10♣): must hold it or have taken it; must not be taken by opponent
+        const hasClubTen = hand.some(c => this.isClubTen(c)) || myTaken.some(c => this.isClubTen(c));
+        const clubTenTakenByOther = Object.entries(tricksTaken).some(
+            ([pid, cards]) => pid !== botId && cards.some(c => this.isClubTen(c))
+        );
+        if (!hasClubTen && clubTenTakenByOther) return false;
+
+        // If pig/sheep/club ten are still unplayed and we don't hold them, it's too uncertain
+        if (!hasPig && !pigTakenByOther) return false;  // pig is out there but not taken — risky unless we hold it
+        // Actually, we checked hasPig includes hand, so if we don't have it and nobody took it,
+        // it means an opponent holds it — can't guarantee getting it
+        if (!hasSheep && !sheepTakenByOther) return false;
+        if (!hasClubTen && !clubTenTakenByOther) return false;
+
+        return true;
+    }
+
+    // Check if an opponent is attempting a grand slam
+    isOpponentAttemptingGrandSlam(playerId, tricksTaken) {
+        // Must have all hearts taken so far
+        if (!this.isOpponentAttemptingSweep(playerId, tricksTaken)) return false;
+
+        const theirTaken = tricksTaken[playerId] || [];
+        const heartCount = theirTaken.filter(c => c.suit === 'hearts').length;
+        if (heartCount < 4) return false;  // not far enough along
+
+        // Check if they also hold pig and/or sheep and club ten
+        const hasPig = theirTaken.some(c => this.isPig(c));
+        const hasSheep = theirTaken.some(c => this.isSheep(c));
+        const hasClubTen = theirTaken.some(c => this.isClubTen(c));
+
+        // If they already have 2+ of the big three (pig, sheep, club10) — likely grand slam attempt
+        const bigCards = [hasPig, hasSheep, hasClubTen].filter(Boolean).length;
+        return bigCards >= 2;
+    }
+
+    // Find opponent most likely attempting a grand slam
+    findGrandSlamOpponent(tricksTaken) {
+        for (const pid of Object.keys(tricksTaken)) {
+            if (pid === this.id) continue;
+            if (this.isOpponentAttemptingGrandSlam(pid, tricksTaken)) return pid;
+        }
+        return null;
+    }
+
     // ─── Main decision function ───
     chooseCard(validCards, gameState) {
         if (validCards.length === 0) return null;
@@ -364,27 +430,47 @@ class Bot {
         const { currentTrick, leadSuit, tricksTaken, botId, hand } = gameState;
         const isLeading = currentTrick.length === 0;
         const fullHand = hand || validCards;
-        const isSweeping = this.canAttemptHeartsSweep(fullHand, tricksTaken, botId);
+        const isGrandSlam = this.canAttemptGrandSlam(fullHand, tricksTaken, botId);
+        const isSweeping = isGrandSlam || this.canAttemptHeartsSweep(fullHand, tricksTaken, botId);
 
         if (isLeading) {
-            return this.chooseLead(validCards, gameState, isSweeping);
+            return this.chooseLead(validCards, gameState, isSweeping, isGrandSlam);
         } else {
             const followingSuit = validCards.some(c => c.suit === leadSuit);
             if (followingSuit) {
-                return this.chooseFollow(validCards, gameState, isSweeping);
+                return this.chooseFollow(validCards, gameState, isSweeping, isGrandSlam);
             } else {
-                return this.chooseDiscard(validCards, gameState, isSweeping);
+                return this.chooseDiscard(validCards, gameState, isSweeping, isGrandSlam);
             }
         }
     }
 
     // ─── LEADING ───
-    chooseLead(validCards, gs, isSweeping) {
+    chooseLead(validCards, gs, isSweeping, isGrandSlam) {
         const { tricksTaken, botId, hand, currentTrick } = gs;
         const fullHand = hand || validCards;
 
+        // === COUNTER-GRAND-SLAM: highest priority disruption ===
+        const grandSlamOpponent = this.findGrandSlamOpponent(tricksTaken);
+        if (grandSlamOpponent && !isGrandSlam) {
+            // Opponent is close to +1000 — disrupt aggressively!
+            // Lead a low heart to break their heart monopoly
+            const hearts = validCards.filter(c => this.isHeart(c));
+            if (hearts.length > 0) {
+                return this.getLowestCard(hearts);
+            }
+            // Try to take sheep ourselves to block them
+            const sheepStillOut = this.sheepIsStillOut(tricksTaken, currentTrick || []);
+            if (sheepStillOut && this.botHoldsSheep(fullHand)) {
+                if (this.isSafeToLeadSheep(fullHand, tricksTaken, currentTrick || [])) {
+                    const sheep = validCards.find(c => this.isSheep(c));
+                    if (sheep) return sheep;
+                }
+            }
+        }
+
         // === COUNTER-SWEEP: if an opponent is sweeping hearts, disrupt! ===
-        const sweepingOpponent = this.findSweepingOpponent(tricksTaken);
+        const sweepingOpponent = !grandSlamOpponent ? this.findSweepingOpponent(tricksTaken) : null;
         if (sweepingOpponent && !isSweeping) {
             // Lead a low heart to take it ourselves and block their sweep
             const hearts = validCards.filter(c => this.isHeart(c));
@@ -393,8 +479,19 @@ class Bot {
             }
         }
 
-        // === SWEEP MODE: lead hearts to collect them all ===
+        // === SWEEP / GRAND SLAM MODE: lead to collect all scoring cards ===
         if (isSweeping) {
+            if (isGrandSlam) {
+                // Grand slam: aggressively collect ALL scoring cards
+                // Lead high hearts to collect them
+                const hearts = validCards.filter(c => this.isHeart(c));
+                if (hearts.length > 0) {
+                    return this.getHighestCard(hearts);
+                }
+                // Lead from strongest suit to maintain control and win tricks
+                return this.leadStrongestSuit(validCards, gs);
+            }
+            // Regular sweep: collect hearts
             const hearts = validCards.filter(c => this.isHeart(c));
             if (hearts.length > 0) {
                 return this.getHighestCard(hearts);
@@ -547,7 +644,7 @@ class Bot {
     }
 
     // ─── FOLLOWING SUIT ───
-    chooseFollow(validCards, gs, isSweeping) {
+    chooseFollow(validCards, gs, isSweeping, isGrandSlam) {
         const { currentTrick, leadSuit, tricksTaken, botId, hand } = gs;
         const fullHand = hand || validCards;
         const trickPos = currentTrick.length;
@@ -575,15 +672,29 @@ class Bot {
             }
         }
 
-        // === SWEEP MODE: try to win tricks containing hearts ===
+        // === SWEEP / GRAND SLAM MODE: try to win tricks containing scoring cards ===
         if (isSweeping) {
-            const heartsInTrick = currentTrick.filter(p => this.isHeart(p.card)).length;
-            if (heartsInTrick > 0 || leadSuit === 'hearts') {
-                const winners = validCards.filter(c => this.wouldWinTrick(c, currentTrick, leadSuit));
-                if (winners.length > 0) return this.getLowestCard(winners);
-            }
-            if (isLastPlayer && !this.trickHasScoringCards(currentTrick)) {
-                return this.getHighestCard(validCards);
+            if (isGrandSlam) {
+                // Grand slam mode: win ANY trick containing scoring cards
+                const hasScoringCards = this.trickHasScoringCards(currentTrick);
+                if (hasScoringCards || leadSuit === 'hearts') {
+                    const winners = validCards.filter(c => this.wouldWinTrick(c, currentTrick, leadSuit));
+                    if (winners.length > 0) return this.getLowestCard(winners);
+                }
+                // Also try to win clean tricks to maintain tempo/control
+                if (isLastPlayer && !hasScoringCards) {
+                    return this.getHighestCard(validCards);
+                }
+            } else {
+                // Regular sweep: focus on hearts
+                const heartsInTrick = currentTrick.filter(p => this.isHeart(p.card)).length;
+                if (heartsInTrick > 0 || leadSuit === 'hearts') {
+                    const winners = validCards.filter(c => this.wouldWinTrick(c, currentTrick, leadSuit));
+                    if (winners.length > 0) return this.getLowestCard(winners);
+                }
+                if (isLastPlayer && !this.trickHasScoringCards(currentTrick)) {
+                    return this.getHighestCard(validCards);
+                }
             }
         }
 
@@ -732,13 +843,30 @@ class Bot {
     }
 
     // ─── DISCARDING (can't follow suit — dump penalties on opponents!) ───
-    chooseDiscard(validCards, gs, isSweeping) {
+    chooseDiscard(validCards, gs, isSweeping, isGrandSlam) {
         const { currentTrick, leadSuit, tricksTaken, botId, hand } = gs;
         const fullHand = hand || validCards;
 
+        // === COUNTER-GRAND-SLAM: if opponent going for grand slam, block aggressively ===
+        const grandSlamOpponent = this.findGrandSlamOpponent(tricksTaken);
+        if (grandSlamOpponent && !isGrandSlam) {
+            const winner = this.currentTrickWinner(currentTrick, leadSuit);
+            // If the grand slam opponent is NOT winning this trick, dump a heart
+            // so someone else takes it and breaks their sweep
+            if (winner && winner.playerId !== grandSlamOpponent) {
+                const hearts = validCards.filter(c => this.isHeart(c));
+                if (hearts.length > 0) {
+                    return this.getLowestCard(hearts);
+                }
+            }
+            // If grand slam opponent IS winning, dump pig to give them penalty...
+            // Actually they WANT scoring cards, so dump NON-scoring to avoid helping them
+            // Skip pig/sheep dump priority to deny them scoring cards
+        }
+
         // === Smart dump targeting: if current trick winner is an opponent
         //     attempting a hearts sweep, dump a heart to block them ===
-        const sweepingOpponent = this.findSweepingOpponent(tricksTaken);
+        const sweepingOpponent = !grandSlamOpponent ? this.findSweepingOpponent(tricksTaken) : null;
         if (sweepingOpponent) {
             const winner = this.currentTrickWinner(currentTrick, leadSuit);
             // If the sweeping opponent is NOT winning this trick,
@@ -751,8 +879,18 @@ class Bot {
             }
         }
 
-        // === SWEEP MODE: keep hearts, dump everything else ===
+        // === SWEEP / GRAND SLAM MODE: keep scoring cards, dump everything else ===
         if (isSweeping) {
+            if (isGrandSlam) {
+                // Grand slam: keep ALL scoring cards (hearts, pig, sheep, club ten)
+                const nonScoring = validCards.filter(c => !this.isScoringCard(c));
+                if (nonScoring.length > 0) {
+                    return this.getHighestCard(nonScoring);
+                }
+                // Only scoring cards left — dump the least valuable
+                return this.getLowestCard(validCards);
+            }
+            // Regular sweep: keep hearts, dump everything else
             const nonHearts = validCards.filter(c => !this.isHeart(c));
             if (nonHearts.length > 0) {
                 const pig = nonHearts.find(c => this.isPig(c));
