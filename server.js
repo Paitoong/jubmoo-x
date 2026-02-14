@@ -164,6 +164,15 @@ function broadcastGameState(roomId) {
     }
 }
 
+// Helper function to record completed trick info for all bots in the room
+function recordTrickForBots(room, trickCards, leadSuit, winnerId) {
+    for (const player of room.game.players) {
+        if (player.isBot && player.recordTrick) {
+            player.recordTrick(trickCards, leadSuit, winnerId);
+        }
+    }
+}
+
 // Helper function to handle bot turns
 async function handleBotTurn(roomId) {
     const room = rooms.get(roomId);
@@ -206,6 +215,12 @@ async function handleBotTurn(roomId) {
         broadcastGameState(roomId);
 
         if (result.trickComplete) {
+            // Record trick info for all bots' tracking
+            // Use lead suit from gameState (captured before playCard cleared it)
+            // or derive from the first card of the trick
+            const trickLeadSuit = gameState.leadSuit || result.trickCards[0]?.card?.suit || null;
+            recordTrickForBots(room, result.trickCards, trickLeadSuit, result.trickWinner);
+
             await new Promise(resolve => setTimeout(resolve, 1500));
 
             io.to(roomId).emit('trickComplete', {
@@ -377,6 +392,13 @@ io.on('connection', (socket) => {
         }
 
         if (room.game.startGame()) {
+            // Reset round tracking for all bots
+            for (const player of room.game.players) {
+                if (player.isBot && player.resetRoundTracking) {
+                    player.resetRoundTracking();
+                }
+            }
+
             io.to(playerRoom.roomId).emit('gameStarted');
             broadcastGameState(playerRoom.roomId);
 
@@ -408,6 +430,10 @@ io.on('connection', (socket) => {
             broadcastGameState(playerRoom.roomId);
 
             if (result.trickComplete) {
+                // Record trick info for all bots' tracking
+                const trickLeadSuit = result.trickCards[0]?.card?.suit || null;
+                recordTrickForBots(room, result.trickCards, trickLeadSuit, result.trickWinner);
+
                 setTimeout(() => {
                     io.to(playerRoom.roomId).emit('trickComplete', {
                         winner: result.trickWinner,
@@ -447,6 +473,14 @@ io.on('connection', (socket) => {
         }
 
         room.game.startNewRound();
+
+        // Reset round tracking for all bots
+        for (const player of room.game.players) {
+            if (player.isBot && player.resetRoundTracking) {
+                player.resetRoundTracking();
+            }
+        }
+
         io.to(playerRoom.roomId).emit('newRoundStarted');
         broadcastGameState(playerRoom.roomId);
         handleBotTurn(playerRoom.roomId);

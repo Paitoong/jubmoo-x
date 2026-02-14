@@ -19,6 +19,150 @@ class Bot {
         this.avatar = avatar || BOT_AVATARS[Math.floor(Math.random() * BOT_AVATARS.length)];
         this.isBot = true;
         this.difficulty = 'hard';
+
+        // ─── Per-round opponent tracking ───
+        this.resetRoundTracking();
+    }
+
+    // ─── Reset all tracked info at the start of each round ───
+    resetRoundTracking() {
+        // Suits each opponent is known to be void in (discarded off-suit)
+        this.opponentVoidSuits = {};  // { playerId: Set<suit> }
+        // Cards each opponent has played this round
+        this.opponentPlayedCards = {}; // { playerId: [card, ...] }
+        // Full trick history for this round
+        this.trickHistory = [];        // [ { leadSuit, plays: [{playerId, card}], winnerId } ]
+        // Track which specific scoring cards opponents have taken
+        this.opponentScoringCardsTaken = {}; // { playerId: [card, ...] }
+        // Count of cards remaining per opponent (starts at 13)
+        this.opponentCardCounts = {};  // { playerId: number }
+    }
+
+    // ─── Record a completed trick — called after every trick finishes ───
+    recordTrick(trickPlays, leadSuit, winnerId) {
+        // trickPlays: [{playerId, card}, ...]
+        if (!trickPlays || trickPlays.length === 0) return;
+
+        // Store trick in history
+        this.trickHistory.push({ leadSuit, plays: trickPlays, winnerId });
+
+        for (const play of trickPlays) {
+            const pid = play.playerId;
+            if (pid === this.id) continue; // skip self
+
+            // Initialize per-player tracking if needed
+            if (!this.opponentPlayedCards[pid]) this.opponentPlayedCards[pid] = [];
+            if (!this.opponentVoidSuits[pid]) this.opponentVoidSuits[pid] = new Set();
+            if (!this.opponentScoringCardsTaken[pid]) this.opponentScoringCardsTaken[pid] = [];
+            if (this.opponentCardCounts[pid] === undefined) this.opponentCardCounts[pid] = 13;
+
+            // Record the card played
+            this.opponentPlayedCards[pid].push(play.card);
+            this.opponentCardCounts[pid] = Math.max(0, this.opponentCardCounts[pid] - 1);
+
+            // Detect void: if opponent played off-suit when not leading
+            if (play.card.suit !== leadSuit && trickPlays[0].playerId !== pid) {
+                this.opponentVoidSuits[pid].add(leadSuit);
+            }
+        }
+
+        // Track scoring cards taken by winner
+        if (winnerId !== this.id) {
+            if (!this.opponentScoringCardsTaken[winnerId]) this.opponentScoringCardsTaken[winnerId] = [];
+            for (const play of trickPlays) {
+                if (this.isScoringCard(play.card)) {
+                    this.opponentScoringCardsTaken[winnerId].push(play.card);
+                }
+            }
+        }
+    }
+
+    // ─── Opponent analysis helpers using tracked data ───
+
+    // Check if a specific opponent is void in a suit
+    isOpponentVoidIn(playerId, suit) {
+        return this.opponentVoidSuits[playerId]?.has(suit) || false;
+    }
+
+    // Get all opponents known to be void in a suit
+    getOpponentsVoidIn(suit) {
+        const voidPlayers = [];
+        for (const [pid, voids] of Object.entries(this.opponentVoidSuits)) {
+            if (voids.has(suit)) voidPlayers.push(pid);
+        }
+        return voidPlayers;
+    }
+
+    // Count how many opponents are void in a suit
+    countOpponentsVoidIn(suit) {
+        return this.getOpponentsVoidIn(suit).length;
+    }
+
+    // Check if any opponent void in a suit still holds penalty cards (hearts/pig)
+    // This means leading that suit is dangerous — they'll dump penalties on the winner
+    isLeadDangerous(suit, tricksTaken) {
+        const voidOpponents = this.getOpponentsVoidIn(suit);
+        for (const pid of voidOpponents) {
+            // Check if this void opponent likely still holds hearts or pig
+            const playedHearts = (this.opponentPlayedCards[pid] || []).filter(c => c.suit === 'hearts');
+            const playedPig = (this.opponentPlayedCards[pid] || []).some(c => this.isPig(c));
+            const cardsLeft = this.opponentCardCounts[pid] || 0;
+
+            // If they haven't dumped many penalties and still have cards, it's risky
+            if (cardsLeft > 0 && !playedPig) return true;
+            if (cardsLeft > 2 && playedHearts.length < 3) return true;
+        }
+        return false;
+    }
+
+    // Estimate how many cards of a suit an opponent may still hold
+    estimateOpponentSuitCount(playerId, suit) {
+        if (this.isOpponentVoidIn(playerId, suit)) return 0;
+        const played = (this.opponentPlayedCards[playerId] || []).filter(c => c.suit === suit).length;
+        const avgPerSuit = 3.25; // 13 cards / 4 suits
+        return Math.max(0, Math.round(avgPerSuit - played));
+    }
+
+    // Find the safest suit to lead based on opponent void information
+    getSafestLeadSuit(validCards, tricksTaken) {
+        const suitRisk = {};
+        const suits = [...new Set(validCards.filter(c => !this.isScoringCard(c)).map(c => c.suit))];
+
+        for (const suit of suits) {
+            let risk = 0;
+            const voidCount = this.countOpponentsVoidIn(suit);
+            risk += voidCount * 10; // each void opponent is risky
+
+            // Extra risk if pig is still out and opponents void in this suit hold it
+            if (this.pigIsStillOut(tricksTaken, [])) {
+                for (const pid of this.getOpponentsVoidIn(suit)) {
+                    const playedPig = (this.opponentPlayedCards[pid] || []).some(c => this.isPig(c));
+                    if (!playedPig) risk += 5;
+                }
+            }
+            suitRisk[suit] = risk;
+        }
+
+        // Return the least risky suit
+        const sorted = Object.entries(suitRisk).sort((a, b) => a[1] - b[1]);
+        return sorted.length > 0 ? sorted[0][0] : null;
+    }
+
+    // Check if an opponent is likely collecting all hearts (sweep attempt)
+    isOpponentAttemptingSweep(playerId, tricksTaken) {
+        const theirHearts = (tricksTaken[playerId] || []).filter(c => c.suit === 'hearts').length;
+        const totalHearts = this.countHeartsTaken(tricksTaken);
+        // If one opponent has ALL hearts taken so far and it's significant
+        return theirHearts === totalHearts && theirHearts >= 4;
+    }
+
+    // Find opponent most likely to be sweeping hearts
+    findSweepingOpponent(tricksTaken) {
+        for (const pid of Object.keys(tricksTaken)) {
+            if (pid === this.id) continue;
+            if (this.isOpponentAttemptingSweep(pid, tricksTaken)) return pid;
+        }
+        return null;
     }
 
     // ─── Card value helpers ───
@@ -239,6 +383,16 @@ class Bot {
         const { tricksTaken, botId, hand, currentTrick } = gs;
         const fullHand = hand || validCards;
 
+        // === COUNTER-SWEEP: if an opponent is sweeping hearts, disrupt! ===
+        const sweepingOpponent = this.findSweepingOpponent(tricksTaken);
+        if (sweepingOpponent && !isSweeping) {
+            // Lead a low heart to take it ourselves and block their sweep
+            const hearts = validCards.filter(c => this.isHeart(c));
+            if (hearts.length > 0) {
+                return this.getLowestCard(hearts); // take a cheap heart to block sweep
+            }
+        }
+
         // === SWEEP MODE: lead hearts to collect them all ===
         if (isSweeping) {
             const hearts = validCards.filter(c => this.isHeart(c));
@@ -353,13 +507,22 @@ class Bot {
             }
         }
 
-        // === Strategy 3: Lead safe low cards ===
+        // === Strategy 3: Lead safe low cards — prefer suits where no opponent is void ===
         const safeSuits = this.getSafeLeads(validCards, tricksTaken);
         if (safeSuits.length > 0) {
+            // Prioritize suits where no opponent is void (less chance of penalty dumps)
+            const safestSuit = this.getSafestLeadSuit(safeSuits, tricksTaken);
+            if (safestSuit) {
+                const safestCards = safeSuits.filter(c => c.suit === safestSuit);
+                if (safestCards.length > 0) {
+                    return this.getLowestCard(safestCards);
+                }
+            }
             return this.getLowestCard(safeSuits);
         }
 
         // === Strategy 4: Lead from shortest non-heart suit to create voids ===
+        // Avoid suits where opponents are void (they'll dump penalties)
         const suitGroups = {};
         for (const c of validCards) {
             if (!this.isScoringCard(c)) {
@@ -368,7 +531,13 @@ class Bot {
             }
         }
         const shortSuit = Object.entries(suitGroups)
-            .sort((a, b) => a[1].length - b[1].length);
+            .sort((a, b) => {
+                // Primary: shortest suit (to void it)
+                // Secondary: prefer suits where fewer opponents are void (safer)
+                const lenDiff = a[1].length - b[1].length;
+                if (lenDiff !== 0) return lenDiff;
+                return this.countOpponentsVoidIn(a[0]) - this.countOpponentsVoidIn(b[0]);
+            });
         if (shortSuit.length > 0) {
             return this.getLowestCard(shortSuit[0][1]);
         }
@@ -390,6 +559,21 @@ class Bot {
         const currentWinner = this.currentTrickWinner(currentTrick, leadSuit);
         const currentWinValue = currentWinner ? this.cardValue(currentWinner.card) : 0;
         const pigStillOut = this.pigIsStillOut(tricksTaken, currentTrick);
+
+        // === Tracking-aware risk: will remaining players dump penalties? ===
+        const playersYetToPlay = 4 - trickPos - 1; // how many after us
+        let dumpRisk = false;
+        if (playersYetToPlay > 0 && !isLastPlayer) {
+            // Check if any player yet to play is void in lead suit
+            const playedIds = new Set(currentTrick.map(p => p.playerId));
+            playedIds.add(botId);
+            for (const [pid, voids] of Object.entries(this.opponentVoidSuits)) {
+                if (!playedIds.has(pid) && voids.has(leadSuit)) {
+                    dumpRisk = true;
+                    break;
+                }
+            }
+        }
 
         // === SWEEP MODE: try to win tricks containing hearts ===
         if (isSweeping) {
@@ -527,6 +711,13 @@ class Bot {
             if (isLastPlayer) {
                 return this.getHighestCard(validCards);
             }
+            // If opponents yet to play are void in lead suit, they may dump penalties
+            // In that case, avoid winning the trick
+            if (dumpRisk) {
+                const safePlay = this.getHighestCardBelow(validCards, currentWinValue);
+                if (safePlay) return safePlay;
+                return this.getLowestCard(validCards);
+            }
             const safePlay = this.getHighestCardBelow(validCards, currentWinValue);
             if (safePlay) return safePlay;
             return this.getLowestCard(validCards);
@@ -542,8 +733,23 @@ class Bot {
 
     // ─── DISCARDING (can't follow suit — dump penalties on opponents!) ───
     chooseDiscard(validCards, gs, isSweeping) {
-        const { currentTrick, tricksTaken, botId, hand } = gs;
+        const { currentTrick, leadSuit, tricksTaken, botId, hand } = gs;
         const fullHand = hand || validCards;
+
+        // === Smart dump targeting: if current trick winner is an opponent
+        //     attempting a hearts sweep, dump a heart to block them ===
+        const sweepingOpponent = this.findSweepingOpponent(tricksTaken);
+        if (sweepingOpponent) {
+            const winner = this.currentTrickWinner(currentTrick, leadSuit);
+            // If the sweeping opponent is NOT winning this trick,
+            // dump a heart so THEY don't get it (someone else takes it)
+            if (winner && winner.playerId !== sweepingOpponent) {
+                const hearts = validCards.filter(c => this.isHeart(c));
+                if (hearts.length > 0) {
+                    return this.getLowestCard(hearts); // cheap heart blocks sweep
+                }
+            }
+        }
 
         // === SWEEP MODE: keep hearts, dump everything else ===
         if (isSweeping) {

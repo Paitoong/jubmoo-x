@@ -449,7 +449,6 @@ body {
     flex-direction: row;
     align-items: flex-start;
     gap: 15px;
-    margin-top: -20px; /* slide cards-row up behind player-info */
 }
 
 .opponent-left .opponent-cards,
@@ -461,6 +460,11 @@ body {
 .opponent-left .opponent-card-back,
 .opponent-right .opponent-card-back {
     margin: -35px 0;
+}
+
+.opponent-left .opponent-card-back:first-child,
+.opponent-right .opponent-card-back:first-child {
+    margin-top: 0;
 }
 
 /* Play Area */
@@ -494,27 +498,31 @@ body {
 }
 
 .trick-card.from-bottom {
-    bottom: 0;
+    bottom: -15px;
     left: 50%;
     transform: translateX(-50%);
+    z-index: 4;
 }
 
 .trick-card.from-top {
-    top: 0;
+    top: -15px;
     left: 50%;
     transform: translateX(-50%);
+    z-index: 1;
 }
 
 .trick-card.from-left {
     left: 0;
     top: 50%;
     transform: translateY(-50%);
+    z-index: 2;
 }
 
 .trick-card.from-right {
     right: 0;
     top: 50%;
     transform: translateY(-50%);
+    z-index: 3;
 }
 
 .game-message {
@@ -719,7 +727,7 @@ body {
 .opponent-left .taken-cards .mini-card,
 .opponent-right .taken-cards .mini-card {
     margin: 0;
-    margin-top: -70px; /* 70% overlap of 100px height */
+    margin-top: -60px; /* 60% overlap of 100px height */
 }
 
 .opponent-left .taken-cards .mini-card:first-child,
