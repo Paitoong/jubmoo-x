@@ -284,6 +284,11 @@ class GongZhuGame {
         const hasSheep = taken.some(c => c.suit === 'diamonds' && c.rank === 'J');
         const hasClubTen = taken.some(c => c.suit === 'clubs' && c.rank === '10');
 
+        // Grand slam: all hearts + pig + sheep + club ten = +1000
+        if (hasAllHearts && hasPig && hasSheep && hasClubTen) {
+            return 1000;
+        }
+
         // Calculate base score (before 10 of clubs effect)
         let baseScore = 0;
 

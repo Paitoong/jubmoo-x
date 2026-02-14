@@ -46,7 +46,7 @@ Jack of diamonds (sheep) +100
 In addition the ten of clubs counts +50 if the player who takes it takes no other scoring cards. If the player does take other scoring cards, the ten of clubs counts nothing in itself, but doubles the value of all other scoring cards taken by that player. Note that the 4, 3 and 2 of hearts are scoring cards, even though they score zero, so the ten of clubs plus the three of hearts score twice zero which is zero.
 
 If one player takes all the hearts, they score +194 instead of -194 and if a player takes all the hearts and the pig as well, then the score for the pig becomes +100, making a total of +294. The sheep (jack of diamonds) is still worth a further +100 to a player who takes all the hearts. But if The sheep (jack of diamonds) is taken by another player, then the value of the sheep is -100 instead of +100.
-
+If one player takes all the hearts, take jack of diamond, take queen of spade and ten of clubs, then the score is +1000 for that turn.
 During the play, the hearts, pig, sheep and ten of clubs are kept face up in front of the players who take them in tricks. All the other cards played to tricks are turned face down when the trick is complete, and are kept in a single heap.
 
 #Exposing cards
