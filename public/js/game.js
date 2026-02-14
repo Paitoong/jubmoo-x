@@ -27,6 +27,10 @@ class GongZhuClient {
         // Track which special card sounds have been played to avoid duplicates
         this.playedCardSounds = new Set();
 
+        // When a trick completes, defer showing new taken cards until trickComplete fires
+        this.pendingTricksTaken = null; // cached tricksTaken snapshot before trick completion
+        this.awaitingTrickComplete = false;
+
         this.initFacebookSDK();
         this.initializeElements();
         this.setupEventListeners();
@@ -538,40 +542,22 @@ class GongZhuClient {
     }
 
     onGameState(state) {
+        // If we're awaiting trick completion, cache the pre-trick tricksTaken
+        // so we don't show new taken cards until the trickComplete event fires
+        if (this.awaitingTrickComplete && this.pendingTricksTaken) {
+            // Override tricksTaken in state with the cached snapshot
+            state.players = state.players.map(p => ({
+                ...p,
+                tricksTaken: this.pendingTricksTaken[p.id] || p.tricksTaken
+            }));
+        }
+
         this.gameState = state;
 
         if (state.gamePhase === 'waiting') {
             this.updateLobbyPlayers();
         } else {
-            // Check current trick for special cards and play sounds
-            this.checkSpecialCardSounds(state);
             this.renderGame();
-        }
-    }
-
-    checkSpecialCardSounds(state) {
-        const trick = state.currentTrick || [];
-
-        // Reset tracked sounds when a new trick starts (empty trick)
-        if (trick.length === 0) {
-            this.playedCardSounds.clear();
-            return;
-        }
-
-        for (const play of trick) {
-            const card = play.card;
-            if (!card) continue;
-            const cardKey = card.id || `${card.rank}_${card.suit}`;
-
-            if (this.playedCardSounds.has(cardKey)) continue;
-
-            if (card.rank === 'J' && card.suit === 'diamonds') {
-                this.playedCardSounds.add(cardKey);
-                this.playSound('jackDiamond');
-            } else if (card.rank === 'Q' && card.suit === 'spades') {
-                this.playedCardSounds.add(cardKey);
-                this.playSound('queenSpade');
-            }
         }
     }
 
@@ -582,9 +568,60 @@ class GongZhuClient {
     onCardPlayed(data) {
         // Play card placement sound for every card played
         this.playSound('cardPlacement');
+
+        // Play special card sounds when the card is played (not after trick completes)
+        const card = data.card;
+        if (card) {
+            if (card.rank === 'Q' && card.suit === 'spades') {
+                this.playSound('queenSpade');
+            } else if (card.rank === 'J' && card.suit === 'diamonds') {
+                this.playSound('jackDiamond');
+            }
+        }
+
+        // If trick is completing (4th card played), cache current tricksTaken
+        // so we don't render the new taken cards until trickComplete fires
+        if (data.result && data.result.trickComplete) {
+            this.awaitingTrickComplete = true;
+            if (this.gameState) {
+                this.pendingTricksTaken = {};
+                for (const p of this.gameState.players) {
+                    this.pendingTricksTaken[p.id] = [...(p.tricksTaken || [])];
+                }
+            }
+        }
     }
 
     onTrickComplete(data) {
+        // Release the cached tricksTaken — now render the updated taken cards
+        this.awaitingTrickComplete = false;
+        this.pendingTricksTaken = null;
+        this.playedCardSounds.clear();
+
+        // Update tricksTaken from the trick data so taken cards render correctly
+        if (this.gameState && data.cards) {
+            const winnerId = data.winner;
+            for (const play of data.cards) {
+                const card = play.card;
+                if (!card) continue;
+                const isScoring = card.suit === 'hearts' ||
+                    (card.suit === 'spades' && card.rank === 'Q') ||
+                    (card.suit === 'diamonds' && card.rank === 'J') ||
+                    (card.suit === 'clubs' && card.rank === '10');
+                if (isScoring) {
+                    const winnerPlayer = this.gameState.players.find(p => p.id === winnerId);
+                    if (winnerPlayer) {
+                        const alreadyHas = (winnerPlayer.tricksTaken || []).some(c => c.id === card.id);
+                        if (!alreadyHas) {
+                            winnerPlayer.tricksTaken = winnerPlayer.tricksTaken || [];
+                            winnerPlayer.tricksTaken.push(card);
+                        }
+                    }
+                }
+            }
+            this.renderGame();
+        }
+
         // Highlight winner
         const winnerPosition = this.getPlayerPosition(data.winner);
         const opponentArea = document.getElementById(`opponent-${winnerPosition}`);
