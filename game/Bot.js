@@ -211,6 +211,17 @@ class Bot {
         return 0;
     }
 
+    // Check if an opponent has taken all hearts so far and none by others
+    // (sheep becomes -100 for us if they complete the sweep)
+    opponentHasAllHearts(tricksTaken) {
+        for (const pid of Object.keys(tricksTaken)) {
+            if (pid === this.id) continue;
+            const hearts = (tricksTaken[pid] || []).filter(c => c.suit === 'hearts');
+            if (hearts.length === 13) return pid;
+        }
+        return null;
+    }
+
     // ─── Trick analysis ───
     trickHasScoringCards(trick) {
         return trick.some(p => this.isScoringCard(p.card));
@@ -341,7 +352,7 @@ class Bot {
     }
 
     // Check if bot is on track for collecting ALL hearts (sweep strategy)
-    // All hearts sweep: +200 instead of -200; with pig: +294 total
+    // All hearts sweep: +194 instead of -194; with pig: +294 total
     canAttemptHeartsSweep(hand, tricksTaken, botId) {
         const myHearts = this.myHeartsTaken(tricksTaken, botId);
         const heartsInHand = hand.filter(c => c.suit === 'hearts').length;
@@ -747,8 +758,15 @@ class Bot {
         // === SHEEP CAPTURE when following DIAMONDS ===
         if (leadSuit === 'diamonds') {
             const sheepStillOut = this.sheepIsStillOut(tricksTaken, currentTrick);
+            const sheepSweeper = this.findSweepingOpponent(tricksTaken);
 
             if (hasSheepInTrick) {
+                if (sheepSweeper) {
+                    // Opponent sweeping hearts — sheep = -100 for us, AVOID winning it!
+                    const losers = validCards.filter(c => !this.wouldWinTrick(c, currentTrick, leadSuit));
+                    if (losers.length > 0) return this.getHighestCard(losers);
+                    return this.getLowestCard(validCards);
+                }
                 // Sheep is in this trick — TRY TO WIN IT!
                 const winners = validCards.filter(c => this.wouldWinTrick(c, currentTrick, leadSuit));
                 if (winners.length > 0) {
@@ -787,11 +805,21 @@ class Bot {
         }
 
         // === Strategy: Win the sheep (+100) in non-diamond tricks (discarded by opponent) ===
+        // But AVOID sheep if an opponent is sweeping hearts (sheep = -100 for us then)
         if (hasSheepInTrick) {
-            const winners = validCards.filter(c => this.wouldWinTrick(c, currentTrick, leadSuit));
-            if (winners.length > 0) {
-                if (penalty + 100 > 0) {
-                    return this.getLowestCard(winners);
+            const sweeper = this.findSweepingOpponent(tricksTaken);
+            if (sweeper) {
+                // Opponent sweeping \u2014 sheep is -100 for us, avoid taking it!
+                const losers = validCards.filter(c => !this.wouldWinTrick(c, currentTrick, leadSuit));
+                if (losers.length > 0) {
+                    return this.getHighestCard(losers);
+                }
+            } else {
+                const winners = validCards.filter(c => this.wouldWinTrick(c, currentTrick, leadSuit));
+                if (winners.length > 0) {
+                    if (penalty + 100 > 0) {
+                        return this.getLowestCard(winners);
+                    }
                 }
             }
         }
@@ -931,14 +959,20 @@ class Bot {
             }
         }
 
-        // === Priority 5: Keep the sheep! Don't discard it — it's +100 ===
-        // When voiding suits, NEVER discard J♦ if we hold it
-        // Also keep high diamonds that help us win sheep later
+        // === Priority 5: Handle sheep strategically ===
+        // Sheep is normally +100, but becomes -100 if an opponent has all hearts.
+        // If an opponent is sweeping hearts, DUMP the sheep (it becomes a penalty for us).
+        const sweeper = this.findSweepingOpponent(tricksTaken);
+        const sheepCard = validCards.find(c => this.isSheep(c));
+        if (sheepCard && sweeper) {
+            // Opponent likely to get all hearts — sheep would be -100 for us, dump it!
+            return sheepCard;
+        }
 
         // === Priority 6: Void a short suit — dump highest cards ===
         const suitGroups = {};
         for (const c of validCards) {
-            // Skip sheep (J♦) — never dump voluntarily
+            // Skip sheep (J♦) — never dump voluntarily (it's +100 normally)
             if (this.isSheep(c)) continue;
             // Skip club ten if we want to keep it
             if (this.isClubTen(c)) continue;

@@ -266,15 +266,32 @@ class GongZhuGame {
     getCurrentRoundScores() {
         const roundScores = {};
 
+        // Detect if any player has all 13 hearts
+        const allHeartsPlayerId = this.findAllHeartsPlayer();
+
         for (const player of this.players) {
-            roundScores[player.id] = this.calculatePlayerScore(this.tricksTaken[player.id]);
+            roundScores[player.id] = this.calculatePlayerScore(
+                this.tricksTaken[player.id], allHeartsPlayerId, player.id
+            );
         }
 
         return roundScores;
     }
 
+    // Find the player who has taken all 13 hearts (if any)
+    findAllHeartsPlayer() {
+        for (const player of this.players) {
+            const taken = this.tricksTaken[player.id] || [];
+            const heartsTaken = taken.filter(c => c.suit === 'hearts');
+            if (heartsTaken.length === 13) return player.id;
+        }
+        return null;
+    }
+
     // Calculate score for a player based on cards taken
-    calculatePlayerScore(taken) {
+    // allHeartsPlayerId: the player (if any) who took all 13 hearts this round
+    // playerId: the current player being scored
+    calculatePlayerScore(taken, allHeartsPlayerId = null, playerId = null) {
         // Check if player took all hearts (all 13 hearts required)
         const heartsTaken = taken.filter(c => c.suit === 'hearts');
         const hasAllHearts = heartsTaken.length === 13;
@@ -294,8 +311,8 @@ class GongZhuGame {
 
         // Calculate hearts score
         if (hasAllHearts) {
-            // All hearts taken: +200 instead of -200
-            baseScore += 200;
+            // All hearts taken: +194 instead of -194
+            baseScore += 194;
             // If also has pig, pig becomes +100 instead of -100
             if (hasPig) {
                 baseScore += 100;
@@ -311,9 +328,15 @@ class GongZhuGame {
             }
         }
 
-        // Sheep bonus (always +100, even with all hearts)
+        // Sheep scoring depends on whether another player has all hearts
         if (hasSheep) {
-            baseScore += 100;
+            if (allHeartsPlayerId && allHeartsPlayerId !== playerId) {
+                // Another player took all hearts — sheep becomes -100 for this player
+                baseScore -= 100;
+            } else {
+                // Normal: sheep is +100
+                baseScore += 100;
+            }
         }
 
         // Club ten effect
@@ -341,8 +364,13 @@ class GongZhuGame {
     calculateRoundScores() {
         const roundScores = {};
 
+        // Detect if any player has all 13 hearts (affects sheep scoring)
+        const allHeartsPlayerId = this.findAllHeartsPlayer();
+
         for (const player of this.players) {
-            const score = this.calculatePlayerScore(this.tricksTaken[player.id]);
+            const score = this.calculatePlayerScore(
+                this.tricksTaken[player.id], allHeartsPlayerId, player.id
+            );
             roundScores[player.id] = score;
             this.scores[player.id] += score;
         }

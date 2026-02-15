@@ -240,35 +240,105 @@
             <button class="btn-help-toggle" id="btn-help-toggle" title="Card Scores">❓</button>
             <div class="help-panel" id="help-panel">
                 <h4>Card Scores</h4>
-                <table class="help-score-table">
-                    <thead>
-                        <tr><th>Card</th><th>Score</th></tr>
-                    </thead>
-                    <tbody>
-                        <tr><td>♠Q (Pig)</td><td class="neg">-100</td></tr>
-                        <tr class="section-gap"><td colspan="2" class="section-header">♥ Hearts</td></tr>
-                        <tr><td>♥A</td><td class="neg">-50</td></tr>
-                        <tr><td>♥K</td><td class="neg">-40</td></tr>
-                        <tr><td>♥Q</td><td class="neg">-30</td></tr>
-                        <tr><td>♥J</td><td class="neg">-20</td></tr>
-                        <tr><td>♥10</td><td class="neg">-10</td></tr>
-                        <tr><td>♥9</td><td class="neg">-9</td></tr>
-                        <tr><td>♥8</td><td class="neg">-8</td></tr>
-                        <tr><td>♥7</td><td class="neg">-7</td></tr>
-                        <tr><td>♥6</td><td class="neg">-6</td></tr>
-                        <tr><td>♥5</td><td class="neg">-5</td></tr>
-                        <tr><td>♥4 – ♥2</td><td class="zero">0 *</td></tr>
-                        <tr class="section-gap"><td colspan="2" class="section-header">♦ Diamond</td></tr>
-                        <tr><td>♦J (Sheep)</td><td class="pos">+100</td></tr>
-                        <tr class="section-gap"><td colspan="2" class="section-header">♣ Club</td></tr>
-                        <tr><td>♣10</td><td class="pos">+50 / ×2</td></tr>
-                    </tbody>
-                </table>
+
+                <!-- Spade: Queen -->
+                <div class="help-section-label">♠ Spade</div>
+                <div class="help-card-row">
+                    <img src="svg_cards/queen_of_spades.svg" class="help-card-img" alt="Q♠" draggable="false">
+                    <span class="help-card-name">Q♠ (Pig)</span>
+                    <span class="help-card-score neg">-100</span>
+                </div>
+
+                <!-- Hearts -->
+                <div class="help-section-label">♥ Hearts</div>
+                <div class="help-card-row">
+                    <img src="svg_cards/ace_of_hearts.svg" class="help-card-img" alt="A♥" draggable="false">
+                    <span class="help-card-name">A♥</span>
+                    <span class="help-card-score neg">-50</span>
+                </div>
+                <div class="help-card-row">
+                    <img src="svg_cards/king_of_hearts.svg" class="help-card-img" alt="K♥" draggable="false">
+                    <span class="help-card-name">K♥</span>
+                    <span class="help-card-score neg">-40</span>
+                </div>
+                <div class="help-card-row">
+                    <img src="svg_cards/queen_of_hearts.svg" class="help-card-img" alt="Q♥" draggable="false">
+                    <span class="help-card-name">Q♥</span>
+                    <span class="help-card-score neg">-30</span>
+                </div>
+                <div class="help-card-row">
+                    <img src="svg_cards/jack_of_hearts.svg" class="help-card-img" alt="J♥" draggable="false">
+                    <span class="help-card-name">J♥</span>
+                    <span class="help-card-score neg">-20</span>
+                </div>
+                <div class="help-card-row">
+                    <img src="svg_cards/10_of_hearts.svg" class="help-card-img" alt="10♥" draggable="false">
+                    <span class="help-card-name">10♥</span>
+                    <span class="help-card-score neg">-10</span>
+                </div>
+                <div class="help-card-row">
+                    <img src="svg_cards/9_of_hearts.svg" class="help-card-img" alt="9♥" draggable="false">
+                    <span class="help-card-name">9♥</span>
+                    <span class="help-card-score neg">-9</span>
+                </div>
+                <div class="help-card-row">
+                    <img src="svg_cards/8_of_hearts.svg" class="help-card-img" alt="8♥" draggable="false">
+                    <span class="help-card-name">8♥</span>
+                    <span class="help-card-score neg">-8</span>
+                </div>
+                <div class="help-card-row">
+                    <img src="svg_cards/7_of_hearts.svg" class="help-card-img" alt="7♥" draggable="false">
+                    <span class="help-card-name">7♥</span>
+                    <span class="help-card-score neg">-7</span>
+                </div>
+                <div class="help-card-row">
+                    <img src="svg_cards/6_of_hearts.svg" class="help-card-img" alt="6♥" draggable="false">
+                    <span class="help-card-name">6♥</span>
+                    <span class="help-card-score neg">-6</span>
+                </div>
+                <div class="help-card-row">
+                    <img src="svg_cards/5_of_hearts.svg" class="help-card-img" alt="5♥" draggable="false">
+                    <span class="help-card-name">5♥</span>
+                    <span class="help-card-score neg">-5</span>
+                </div>
+                <div class="help-card-row">
+                    <img src="svg_cards/4_of_hearts.svg" class="help-card-img" alt="4♥" draggable="false">
+                    <span class="help-card-name">4♥</span>
+                    <span class="help-card-score neg">-4</span>
+                </div>
+                <div class="help-card-row">
+                    <img src="svg_cards/3_of_hearts.svg" class="help-card-img" alt="3♥" draggable="false">
+                    <span class="help-card-name">3♥</span>
+                    <span class="help-card-score neg">-3</span>
+                </div>
+                <div class="help-card-row">
+                    <img src="svg_cards/2_of_hearts.svg" class="help-card-img" alt="2♥" draggable="false">
+                    <span class="help-card-name">2♥</span>
+                    <span class="help-card-score neg">-2</span>
+                </div>
+
+                <!-- Diamond: Jack -->
+                <div class="help-section-label">♦ Diamond</div>
+                <div class="help-card-row">
+                    <img src="svg_cards/jack_of_diamonds.svg" class="help-card-img" alt="J♦" draggable="false">
+                    <span class="help-card-name">J♦ (Sheep)</span>
+                    <span class="help-card-score pos">+100</span>
+                </div>
+
+                <!-- Club: 10 -->
+                <div class="help-section-label">♣ Club</div>
+                <div class="help-card-row">
+                    <img src="svg_cards/10_of_clubs.svg" class="help-card-img" alt="10♣" draggable="false">
+                    <span class="help-card-name">10♣</span>
+                    <span class="help-card-score pos">+50 / ×2</span>
+                </div>
+
                 <div class="help-notes">
-                    <p>* ♥4–♥2 score 0 but still count as scoring cards.</p>
                     <p>♣10 = +50 if taken alone; otherwise doubles all scoring cards.</p>
-                    <p>All hearts → +194. All hearts + ♠Q → +294.</p>
-                    <p>All hearts + ♠Q + ♦J + ♣10 → +1000.</p>
+                    <p>All hearts → +194 (instead of -194).</p>
+                    <p>All hearts + ♠Q → +294.</p>
+                    <p>♦J = -100 if another player takes all hearts.</p>
+                    <p>All hearts + ♠Q + ♦J + ♣10 → <strong>+1000</strong>.</p>
                 </div>
             </div>
         </div>
@@ -420,9 +490,9 @@
                 <ul>
                     <li>♠Q (Pig): <strong>-100</strong></li>
                     <li>♥A: -50, ♥K: -40, ♥Q: -30, ♥J: -20</li>
-                    <li>♥10,9,8,7,6,5: -10 each</li>
-                    <li>♥4,3,2: 0 (but still count as scoring cards)</li>
-                    <li>♦J (Sheep): <strong>+100</strong></li>
+                    <li>♥10: -10, ♥9: -9, ♥8: -8, ♥7: -7, ♥6: -6, ♥5: -5</li>
+                    <li>♥4: -4, ♥3: -3, ♥2: -2</li>
+                    <li>♦J (Sheep): <strong>+100</strong> (or <strong>-100</strong> if another player takes all hearts)</li>
                     <li>♣10: +50 alone, or doubles all scoring cards</li>
                 </ul>
             </div>
@@ -440,9 +510,11 @@
             <div class="rules-section">
                 <h3>🏆 Special Rules</h3>
                 <ul>
-                    <li>Taking ALL hearts: +200 instead of -200</li>
-                    <li>All hearts + Pig: Pig becomes +100</li>
-                    <li>Game ends when someone reaches -1000</li>
+                    <li>Taking ALL hearts: +194 instead of -194</li>
+                    <li>All hearts + Pig: Pig becomes +100 (total +294)</li>
+                    <li>♦J = -100 if taken by another player when someone has all hearts</li>
+                    <li>All hearts + Pig + Sheep + ♣10 = <strong>+1000</strong></li>
+                    <li>Game ends when someone reaches the target score</li>
                 </ul>
             </div>
         </div>
