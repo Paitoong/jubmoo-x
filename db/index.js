@@ -46,5 +46,34 @@ module.exports = {
         const res = await pool.query(query, [name, avatar, id]);
         return res.rows[0];
     },
+
+    // Feature flags helpers
+    getFeatureFlags: async () => {
+        const query = 'SELECT flag_key, enabled FROM feature_flags';
+        const res = await pool.query(query);
+        const flags = {};
+        for (const row of res.rows) {
+            flags[row.flag_key] = row.enabled;
+        }
+        return flags;
+    },
+
+    getFeatureFlag: async (flagKey) => {
+        const query = 'SELECT enabled FROM feature_flags WHERE flag_key = $1';
+        const res = await pool.query(query, [flagKey]);
+        return res.rows[0]?.enabled ?? false;
+    },
+
+    setFeatureFlag: async (flagKey, enabled) => {
+        const query = `
+            UPDATE feature_flags
+            SET enabled = $1, updated_at = CURRENT_TIMESTAMP
+            WHERE flag_key = $2
+            RETURNING *
+        `;
+        const res = await pool.query(query, [enabled, flagKey]);
+        return res.rows[0];
+    },
+
     pool: pool
 };

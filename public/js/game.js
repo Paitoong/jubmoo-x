@@ -32,10 +32,14 @@ class GongZhuClient {
         this.pendingTricksTaken = null; // cached tricksTaken snapshot before trick completion
         this.awaitingTrickComplete = false;
 
+        // Feature flags (defaults: hidden until fetched)
+        this.featureFlags = { facebook_login: false, create_account: false };
+
         this.initFacebookSDK();
         this.initializeElements();
         this.setupEventListeners();
         this.setupSocketListeners();
+        this.fetchFeatureFlags();
 
         // Set initial sound button state
         const soundBtn = document.getElementById('btn-sound-toggle');
@@ -250,6 +254,34 @@ class GongZhuClient {
             });
             FB.AppEvents.logPageView();
         };
+    }
+
+    // Feature Flags
+    async fetchFeatureFlags() {
+        try {
+            const res = await fetch('/api/feature-flags');
+            const data = await res.json();
+            if (data.success && data.flags) {
+                this.featureFlags = data.flags;
+            }
+        } catch (err) {
+            console.warn('Failed to fetch feature flags, using defaults');
+        }
+        this.applyFeatureFlags();
+    }
+
+    applyFeatureFlags() {
+        const fbBtn = document.getElementById('btn-fb-login');
+        const registerBtn = document.getElementById('btn-to-register');
+        const divider = document.getElementById('login-divider');
+
+        const showFb = this.featureFlags.facebook_login;
+        const showRegister = this.featureFlags.create_account;
+
+        if (fbBtn) fbBtn.style.display = showFb ? 'block' : 'none';
+        if (registerBtn) registerBtn.style.display = showRegister ? 'block' : 'none';
+        // Show divider if either feature is enabled
+        if (divider) divider.style.display = (showFb || showRegister) ? 'block' : 'none';
     }
 
     loginWithFacebook() {

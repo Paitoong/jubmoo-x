@@ -147,6 +147,18 @@ app.put('/api/profile', verifyToken, async (req, res) => {
     }
 });
 
+// Feature Flags Endpoint
+app.get('/api/feature-flags', async (req, res) => {
+    try {
+        const flags = await db.getFeatureFlags();
+        res.json({ success: true, flags });
+    } catch (err) {
+        console.error('Error fetching feature flags:', err);
+        // Return defaults if DB is unavailable
+        res.json({ success: true, flags: { facebook_login: false, create_account: true } });
+    }
+});
+
 // Game rooms storage
 const rooms = new Map();
 const playerRooms = new Map();
