@@ -680,7 +680,10 @@ class GongZhuClient {
     }
 
     onRoundOver(data) {
-        this.playSound('endRound');
+        // Don't play end_round sound on the final round (game over plays its own sound)
+        if (!(data.gameOver && data.gameOver.gameOver)) {
+            this.playSound('endRound');
+        }
         this.showRoundModal(data.scores, data.gameOver);
     }
 
