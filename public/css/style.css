@@ -989,6 +989,116 @@ body {
     z-index: 100;
 }
 
+/* Help Menu */
+.help-menu-container {
+    position: fixed;
+    top: 15px;
+    left: 15px;
+    z-index: 150;
+}
+
+.btn-help-toggle {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    background: rgba(0, 0, 0, 0.5);
+    font-size: 22px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-help-toggle:hover {
+    background: rgba(0, 0, 0, 0.7);
+    transform: scale(1.1);
+}
+
+.help-panel {
+    display: none;
+    position: absolute;
+    top: 52px;
+    left: 0;
+    background: rgba(30, 40, 55, 0.97);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 12px;
+    padding: 16px;
+    width: 260px;
+    max-height: 70vh;
+    overflow-y: auto;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
+    color: #eee;
+}
+
+.help-panel.active {
+    display: block;
+}
+
+.help-panel h4 {
+    margin: 0 0 10px 0;
+    color: #f1c40f;
+    font-size: 16px;
+    text-align: center;
+}
+
+.help-score-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.help-score-table th {
+    text-align: left;
+    padding: 4px 6px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    color: #aaa;
+    font-weight: 600;
+}
+
+.help-score-table td {
+    padding: 3px 6px;
+}
+
+.help-score-table .section-header {
+    font-weight: 600;
+    color: #f1c40f;
+    padding-top: 8px;
+    font-size: 12px;
+}
+
+.help-score-table .neg {
+    color: #e74c3c;
+    font-weight: 600;
+    text-align: right;
+}
+
+.help-score-table .pos {
+    color: #2ecc71;
+    font-weight: 600;
+    text-align: right;
+}
+
+.help-score-table .zero {
+    color: #95a5a6;
+    font-weight: 600;
+    text-align: right;
+}
+
+.help-notes {
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
+    font-size: 11px;
+    color: #999;
+    line-height: 1.5;
+}
+
+.help-notes p {
+    margin: 3px 0;
+}
+
 .btn-sound-toggle {
     width: 48px;
     height: 48px;

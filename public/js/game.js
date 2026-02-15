@@ -162,10 +162,21 @@ class GongZhuClient {
         // Sound toggle
         document.getElementById('btn-sound-toggle').addEventListener('click', () => this.toggleSound());
 
+        // Help menu toggle
+        document.getElementById('btn-help-toggle').addEventListener('click', (e) => {
+            e.stopPropagation();
+            document.getElementById('help-panel').classList.toggle('active');
+        });
+
         // Close emotion picker when clicking outside
         document.addEventListener('click', (e) => {
             if (!this.emotionPicker.contains(e.target) && e.target !== this.btnEmotionToggle) {
                 this.toggleEmotionPicker(false);
+            }
+            // Close help panel when clicking outside
+            const helpContainer = document.getElementById('help-menu-container');
+            if (helpContainer && !helpContainer.contains(e.target)) {
+                document.getElementById('help-panel').classList.remove('active');
             }
         });
     }
@@ -567,9 +578,6 @@ class GongZhuClient {
     }
 
     onCardPlayed(data) {
-        // Play card placement sound for every card played
-        this.playSound('cardPlacement');
-
         // Play special card sounds when the card is played (not after trick completes)
         const card = data.card;
         if (card) {
@@ -594,6 +602,9 @@ class GongZhuClient {
     }
 
     onTrickComplete(data) {
+        // Play card placement sound once per completed trick
+        this.playSound('cardPlacement');
+
         // Release the cached tricksTaken — now render the updated taken cards
         this.awaitingTrickComplete = false;
         this.pendingTricksTaken = null;
@@ -984,10 +995,10 @@ class GongZhuClient {
 
         const loser = this.gameState.players.find(p => p.id === gameOver.loser);
         let resultHtml = `
-            <div class="game-result">
+            <div class="game-result" style="text-align: center;">
                 <h3>🐷 The Pig Award Goes To... 🐷</h3>
-                <p style="font-size: 48px; margin: 20px 0;">${loser?.avatar || '🐷'}</p>
-                <p style="font-size: 24px;">${loser?.name || 'Unknown'}</p>
+                <img src="image/loser_player.png" alt="Loser" style="max-width: 200px; margin: 20px auto; display: block;" />
+                <p style="font-size: 24px; font-weight: bold; margin-top: 10px;">${loser?.name || 'Unknown'}</p>
                 <p style="color: var(--danger-color); font-size: 20px;">Score: ${loser?.score || -1000}</p>
             </div>
         `;

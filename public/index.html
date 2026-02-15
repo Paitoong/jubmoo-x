@@ -235,6 +235,44 @@
 
     <!-- Game Screen -->
     <div id="game-screen" class="screen">
+        <!-- Help Menu (top-left corner) -->
+        <div class="help-menu-container" id="help-menu-container">
+            <button class="btn-help-toggle" id="btn-help-toggle" title="Card Scores">❓</button>
+            <div class="help-panel" id="help-panel">
+                <h4>Card Scores</h4>
+                <table class="help-score-table">
+                    <thead>
+                        <tr><th>Card</th><th>Score</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>♠Q (Pig)</td><td class="neg">-100</td></tr>
+                        <tr class="section-gap"><td colspan="2" class="section-header">♥ Hearts</td></tr>
+                        <tr><td>♥A</td><td class="neg">-50</td></tr>
+                        <tr><td>♥K</td><td class="neg">-40</td></tr>
+                        <tr><td>♥Q</td><td class="neg">-30</td></tr>
+                        <tr><td>♥J</td><td class="neg">-20</td></tr>
+                        <tr><td>♥10</td><td class="neg">-10</td></tr>
+                        <tr><td>♥9</td><td class="neg">-9</td></tr>
+                        <tr><td>♥8</td><td class="neg">-8</td></tr>
+                        <tr><td>♥7</td><td class="neg">-7</td></tr>
+                        <tr><td>♥6</td><td class="neg">-6</td></tr>
+                        <tr><td>♥5</td><td class="neg">-5</td></tr>
+                        <tr><td>♥4 – ♥2</td><td class="zero">0 *</td></tr>
+                        <tr class="section-gap"><td colspan="2" class="section-header">♦ Diamond</td></tr>
+                        <tr><td>♦J (Sheep)</td><td class="pos">+100</td></tr>
+                        <tr class="section-gap"><td colspan="2" class="section-header">♣ Club</td></tr>
+                        <tr><td>♣10</td><td class="pos">+50 / ×2</td></tr>
+                    </tbody>
+                </table>
+                <div class="help-notes">
+                    <p>* ♥4–♥2 score 0 but still count as scoring cards.</p>
+                    <p>♣10 = +50 if taken alone; otherwise doubles all scoring cards.</p>
+                    <p>All hearts → +194. All hearts + ♠Q → +294.</p>
+                    <p>All hearts + ♠Q + ♦J + ♣10 → +1000.</p>
+                </div>
+            </div>
+        </div>
+
         <div class="game-container">
             <!-- Opponent areas -->
             <div class="opponent-area opponent-top" id="opponent-top">
