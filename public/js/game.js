@@ -610,6 +610,9 @@ class GongZhuClient {
     }
 
     onCardPlayed(data) {
+        // Play card placement sound for every card played by any player
+        this.playSound('cardPlacement');
+
         // Play special card sounds when the card is played (not after trick completes)
         const card = data.card;
         if (card) {
@@ -634,9 +637,6 @@ class GongZhuClient {
     }
 
     onTrickComplete(data) {
-        // Play card placement sound once per completed trick
-        this.playSound('cardPlacement');
-
         // Release the cached tricksTaken — now render the updated taken cards
         this.awaitingTrickComplete = false;
         this.pendingTricksTaken = null;
