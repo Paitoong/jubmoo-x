@@ -211,6 +211,33 @@ class Bot {
         return 0;
     }
 
+    // Returns true when the pig/sheep swap rule is active:
+    // someone has all hearts in tricksTaken but did NOT achieve a grand slam.
+    // In that case pig = +100, sheep = -100 for the round.
+    isSwapActive(tricksTaken) {
+        for (const [pid, taken] of Object.entries(tricksTaken)) {
+            const heartCount = taken.filter(c => c.suit === 'hearts').length;
+            if (heartCount < 13) continue; // this player does not have all hearts
+            // Check if they also have all three special cards (grand slam)
+            const hasPig = taken.some(c => this.isPig(c));
+            const hasSheep = taken.some(c => this.isSheep(c));
+            const hasClubTen = taken.some(c => this.isClubTen(c));
+            if (!(hasPig && hasSheep && hasClubTen)) return true; // swap active
+        }
+        return false;
+    }
+
+    // Context-aware card value: respects the pig/sheep swap rule.
+    // Returns the effective score delta of taking a card given current tricksTaken.
+    effectiveCardPenalty(card, tricksTaken) {
+        const swapActive = this.isSwapActive(tricksTaken);
+        if (swapActive) {
+            if (this.isPig(card)) return +100; // pig is a bonus when swap active
+            if (this.isSheep(card)) return -100; // sheep is a penalty when swap active
+        }
+        return this.cardPenalty(card);
+    }
+
     // Check if an opponent has taken all hearts so far and none by others
     // (sheep becomes -100 for us if they complete the sweep)
     opponentHasAllHearts(tricksTaken) {
@@ -759,10 +786,14 @@ class Bot {
         if (leadSuit === 'diamonds') {
             const sheepStillOut = this.sheepIsStillOut(tricksTaken, currentTrick);
             const sheepSweeper = this.findSweepingOpponent(tricksTaken);
+            // Swap is active if someone already has all hearts (without grand slam)
+            const swapNowActive = this.isSwapActive(tricksTaken);
+            // Sheep is dangerous (-100) when swap rule is active or an opponent is sweeping
+            const sheepIsDangerous = swapNowActive || !!sheepSweeper;
 
             if (hasSheepInTrick) {
-                if (sheepSweeper) {
-                    // Opponent sweeping hearts — sheep = -100 for us, AVOID winning it!
+                if (sheepIsDangerous) {
+                    // Sheep = -100 for us under swap/sweep — AVOID winning it!
                     const losers = validCards.filter(c => !this.wouldWinTrick(c, currentTrick, leadSuit));
                     if (losers.length > 0) return this.getHighestCard(losers);
                     return this.getLowestCard(validCards);
@@ -805,11 +836,12 @@ class Bot {
         }
 
         // === Strategy: Win the sheep (+100) in non-diamond tricks (discarded by opponent) ===
-        // But AVOID sheep if an opponent is sweeping hearts (sheep = -100 for us then)
+        // But AVOID sheep if swap is active or an opponent is sweeping hearts (sheep = -100 then)
         if (hasSheepInTrick) {
             const sweeper = this.findSweepingOpponent(tricksTaken);
-            if (sweeper) {
-                // Opponent sweeping \u2014 sheep is -100 for us, avoid taking it!
+            const swapNow = this.isSwapActive(tricksTaken);
+            if (sweeper || swapNow) {
+                // Sheep is -100 for us — avoid taking it!
                 const losers = validCards.filter(c => !this.wouldWinTrick(c, currentTrick, leadSuit));
                 if (losers.length > 0) {
                     return this.getHighestCard(losers);
@@ -960,12 +992,14 @@ class Bot {
         }
 
         // === Priority 5: Handle sheep strategically ===
-        // Sheep is normally +100, but becomes -100 if an opponent has all hearts.
-        // If an opponent is sweeping hearts, DUMP the sheep (it becomes a penalty for us).
+        // Sheep is normally +100, but becomes -100 when the swap rule is active
+        // (i.e., any player has all hearts without a grand slam).
+        // Also dump sheep if an opponent is currently sweeping hearts (likely swap incoming).
         const sweeper = this.findSweepingOpponent(tricksTaken);
+        const swapAlreadyActive = this.isSwapActive(tricksTaken);
         const sheepCard = validCards.find(c => this.isSheep(c));
-        if (sheepCard && sweeper) {
-            // Opponent likely to get all hearts — sheep would be -100 for us, dump it!
+        if (sheepCard && (sweeper || swapAlreadyActive)) {
+            // Sheep would be -100 for us — dump it!
             return sheepCard;
         }
 

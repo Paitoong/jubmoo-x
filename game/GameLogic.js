@@ -53,7 +53,7 @@ class Deck {
 }
 
 class GongZhuGame {
-    constructor(roomId, targetScore = -500) {
+    constructor(roomId, targetScore = -1000) {
         this.roomId = roomId;
         this.targetScore = targetScore;
         this.players = [];
@@ -268,14 +268,29 @@ class GongZhuGame {
 
         // Detect if any player has all 13 hearts
         const allHeartsPlayerId = this.findAllHeartsPlayer();
+        const swapActive = this.isPigSheepSwapped(allHeartsPlayerId);
 
         for (const player of this.players) {
             roundScores[player.id] = this.calculatePlayerScore(
-                this.tricksTaken[player.id], allHeartsPlayerId, player.id
+                this.tricksTaken[player.id], allHeartsPlayerId, player.id, swapActive
             );
         }
 
         return roundScores;
+    }
+
+    // Detect whether the pig/sheep swap rule is active this round.
+    // Swap is active when some player took ALL 13 hearts but did NOT achieve
+    // a grand slam (all hearts + pig + sheep + club ten).
+    // In that case: pig = +100, sheep = -100 for that round.
+    isPigSheepSwapped(allHeartsPlayerId) {
+        if (!allHeartsPlayerId) return false;
+        const taken = this.tricksTaken[allHeartsPlayerId] || [];
+        const hasPig = taken.some(c => c.suit === 'spades' && c.rank === 'Q');
+        const hasSheep = taken.some(c => c.suit === 'diamonds' && c.rank === 'J');
+        const hasClubTen = taken.some(c => c.suit === 'clubs' && c.rank === '10');
+        // Grand slam covers all four scoring types — no swap needed
+        return !(hasPig && hasSheep && hasClubTen);
     }
 
     // Find the player who has taken all 13 hearts (if any)
@@ -288,10 +303,12 @@ class GongZhuGame {
         return null;
     }
 
-    // Calculate score for a player based on cards taken
-    // allHeartsPlayerId: the player (if any) who took all 13 hearts this round
-    // playerId: the current player being scored
-    calculatePlayerScore(taken, allHeartsPlayerId = null, playerId = null) {
+    // Calculate score for a player based on cards taken.
+    // allHeartsPlayerId: the player (if any) who took all 13 hearts this round.
+    // playerId: the current player being scored.
+    // swapActive: true when all-hearts player did NOT achieve a grand slam,
+    //   causing pig (+100) and sheep (-100) values to swap for the round.
+    calculatePlayerScore(taken, allHeartsPlayerId = null, playerId = null, swapActive = false) {
         // Check if player took all hearts (all 13 hearts required)
         const heartsTaken = taken.filter(c => c.suit === 'hearts');
         const hasAllHearts = heartsTaken.length === 13;
@@ -309,51 +326,54 @@ class GongZhuGame {
         // Calculate base score (before 10 of clubs effect)
         let baseScore = 0;
 
-        // Calculate hearts score
+        // ── Hearts ──
         if (hasAllHearts) {
-            // All hearts taken: +194 instead of -194
+            // All hearts taken: reverse penalty to +194
             baseScore += 194;
-            // If also has pig, pig becomes +100 instead of -100
-            if (hasPig) {
-                baseScore += 100;
-            }
         } else {
-            // Normal hearts scoring
             for (const card of heartsTaken) {
                 baseScore += this.getHeartValue(card);
             }
-            // Normal pig penalty
-            if (hasPig) {
-                baseScore -= 100;
+        }
+
+        // ── Pig (Queen of Spades) ──
+        // Swap active: pig = +100 regardless of who holds all hearts.
+        // Without swap: pig = -100 normally, but +100 for the all-hearts player.
+        if (hasPig) {
+            if (swapActive) {
+                baseScore += 100; // swap: pig is always +100 this round
+            } else if (hasAllHearts) {
+                baseScore += 100; // all-hearts player: pig is bonus (grand slam path)
+            } else {
+                baseScore -= 100; // normal penalty
             }
         }
 
-        // Sheep scoring depends on whether another player has all hearts
+        // ── Sheep (Jack of Diamonds) ──
+        // Swap active: sheep = -100 regardless of who holds it.
+        // Without swap: sheep = +100 normally, but -100 if another player has all hearts.
         if (hasSheep) {
-            if (allHeartsPlayerId && allHeartsPlayerId !== playerId) {
-                // Another player took all hearts — sheep becomes -100 for this player
+            if (swapActive) {
+                baseScore -= 100; // swap: sheep is always -100 this round
+            } else if (allHeartsPlayerId && allHeartsPlayerId !== playerId) {
+                // Another player completed all-hearts (grand slam) — sheep = -100
                 baseScore -= 100;
             } else {
-                // Normal: sheep is +100
-                baseScore += 100;
+                baseScore += 100; // normal bonus
             }
         }
 
-        // Club ten effect
-        // The 10 of clubs has special rules:
-        // - If NO other scoring cards taken: +50
-        // - If other scoring cards taken: doubles all other scoring cards, but 10 of clubs itself is worth 0
-        // Note: Hearts 4, 3, 2 ARE scoring cards even though they score 0
+        // ── Club Ten ──
+        // - No other scoring cards taken: +50
+        // - Other scoring cards taken: doubles all other scoring card values (club ten itself = 0)
         if (hasClubTen) {
             const otherScoringCards = taken.filter(c =>
                 this.isScoringCard(c) && !(c.suit === 'clubs' && c.rank === '10')
             );
 
             if (otherScoringCards.length === 0) {
-                // No other scoring cards - club ten is worth +50
                 return baseScore + 50;
             } else {
-                // Double the base score (10 of clubs itself contributes 0)
                 return baseScore * 2;
             }
         }
@@ -364,12 +384,13 @@ class GongZhuGame {
     calculateRoundScores() {
         const roundScores = {};
 
-        // Detect if any player has all 13 hearts (affects sheep scoring)
+        // Detect if any player has all 13 hearts (affects pig/sheep scoring)
         const allHeartsPlayerId = this.findAllHeartsPlayer();
+        const swapActive = this.isPigSheepSwapped(allHeartsPlayerId);
 
         for (const player of this.players) {
             const score = this.calculatePlayerScore(
-                this.tricksTaken[player.id], allHeartsPlayerId, player.id
+                this.tricksTaken[player.id], allHeartsPlayerId, player.id, swapActive
             );
             roundScores[player.id] = score;
             this.scores[player.id] += score;
