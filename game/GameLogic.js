@@ -374,8 +374,14 @@ class GongZhuGame {
             if (otherScoringCards.length === 0) {
                 return baseScore + 50;
             } else {
-                return baseScore * 2;
+                const finalScore = baseScore * 2;
+                return finalScore === 0 ? -50 : finalScore;
             }
+        }
+
+        // Apply penalty if the player got 0 points
+        if (baseScore === 0) {
+            return -50;
         }
 
         return baseScore;
